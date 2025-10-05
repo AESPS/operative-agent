@@ -345,36 +345,6 @@ Can be quite expensive :)
 💡 **Tip**: Use `light` models for simple tasks, `heavy` models only for complex analysis.
 
 ---
-
-## 🤝 Contributing
-
-Contributions welcome! Feel free to:
-- Report bugs
-- Suggest features
-- Submit pull requests
-- Improve documentation
-
----
-
-## 📄 License
-
-MIT License - See LICENSE file for details
-
----
-
-## 🙏 Acknowledgments
-
-- Anthropic for Claude API
-- OpenAI for ChatGPT API
-- Kali Linux community
-- CTF community
-
----
-
-## 📧 Contact
-
-For questions or issues, open an issue on GitHub or contact [your-email@example.com]
-
 ---
 
 **Happy Hacking! 🎯**
