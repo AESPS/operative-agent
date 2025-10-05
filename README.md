@@ -210,7 +210,3 @@ sudo apt install -y nmap binutils
 ---
 
 **⚡ For authorized testing only. You are responsible for your actions.**
-
-```
-[EOF]
-```
