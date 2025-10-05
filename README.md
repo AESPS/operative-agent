@@ -75,14 +75,14 @@ You need at least one API key (Claude OR OpenAI):
 
 ```bash
 # For Claude (Anthropic)
-export ANTHROPIC_API_KEY="sk-ant-api03-..."
+export ANTHROPIC_API_KEY="..."
 
 # For OpenAI (ChatGPT)
-export OPENAI_API_KEY="sk-..."
+export OPENAI_API_KEY="..."
 
 # Make it persistent (add to ~/.bashrc or ~/.zshrc)
-echo 'export ANTHROPIC_API_KEY="sk-ant-api03-..."' >> ~/.bashrc
-echo 'export OPENAI_API_KEY="sk-..."' >> ~/.bashrc
+echo 'export ANTHROPIC_API_KEY="..."' >> ~/.zshrc
+echo 'export OPENAI_API_KEY="sk-..."' >> ~/.zshrc
 source ~/.bashrc
 ```
 
