@@ -11,7 +11,7 @@ AI-Powered CTF & Security Analysis Agent with Multi-Model Support
  ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═══╝  ╚══════╝
 ```
 <div align="center">
-  <img src="./operative-header.svg" alt="Operative" width="800"/>
+  <img src="assets/operative-header.svg" alt="Operative" width="800"/>
 </div>
 
 
