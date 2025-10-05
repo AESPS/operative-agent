@@ -1,4 +1,4 @@
-# 🎯 Operative AI
+# 🎯 Operative Agent
 
 AI-Powered CTF & Security Analysis Agent with Multi-Model Support
 
