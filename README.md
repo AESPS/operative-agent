@@ -25,7 +25,7 @@ AI-Powered CTF & Security Analysis Agent with Multi-Model Support
 ### Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/operative-ai.git
+git clone https://github.com/AESPS/operative-ai.git
 cd operative-ai
 ```
 
