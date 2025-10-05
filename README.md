@@ -2,7 +2,8 @@
 ![Operative](./assets/operative_header.svg)
 
 
-**Operative Agent** is an intelligent agent that combines Claude and ChatGPT APIs with local Kali Linux security tools for automated CTF challenges, penetration testing, and security research.
+# 🎯 Operative Agent
+AI-Powered CTF & Security Analysis Agent with Multi-Model Support
 
 ---
 
