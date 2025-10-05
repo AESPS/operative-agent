@@ -1,350 +1,185 @@
-
+# 🎯 OperativeAgent
 ![Operative](./assets/operative_header.svg)
+AI-powered security tool combining Claude (Anthropic) and ChatGPT (OpenAI) with automated CTF solving capabilities.
 
-
-# 🎯 Operative Agent
-AI-Powered CTF & Security Analysis Agent with Multi-Model Support
-
----
-
-## 📋 Features
-
-- 🤖 **Multi-Model Support**: Switch between Claude (Opus, Sonnet, Haiku) and OpenAI (GPT-4, GPT-3.5)
-- 🛠️ **Built-in Security Tools**: nmap, strings, file operations, encoding/decoding
-- 💾 **Smart File Management**: Automatically saves decoded/generated files to `/tmp/`
-- 🎯 **CTF Optimized**: Flag detection, shellcode analysis, binary inspection
-- ⚡ **Flexible Execution**: Auto-execute or manual approval for each tool
-- 🔧 **Inline Flags**: Override settings per-message (model, auto-execute, max-steps)
-- 📁 **Session Tracking**: Remember files created during conversation
-
----
-
-## 🚀 Installation
-
-### Clone Repository
+## 🚀 Quick Start
 
 ```bash
-git clone https://github.com/AESPS/operative-agent.git
-cd operative-agent
-```
+# Clone & Setup
+git clone https://github.com/yourusername/operative.git
+cd operative
+python3 -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
-### Requirements
+# Install
+pip install anthropic openai
 
-**System Requirements:**
-- Python 3.8+
-- Kali Linux or Ubuntu (recommended for security tools)
-- nmap, strings, and other standard Unix utilities
+# Configure API Keys
+export ANTHROPIC_API_KEY="..."  # For Claude
+export OPENAI_API_KEY="..."     # For ChatGPT
 
-**For Kali Linux:**
-```bash
-sudo apt update
-sudo apt install python3 python3-pip python3-venv nmap binutils -y
-```
-
-**For Ubuntu:**
-```bash
-sudo apt update
-sudo apt install python3 python3-pip python3-venv nmap binutils -y
-```
-
-### Setup Python Environment
-
-```bash
-# Create virtual environment
-python3 -m venv env
-
-# Activate virtual environment
-source env/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### Set API Keys
-
-You need at least one API key (Claude OR OpenAI):
-
-```bash
-# For Claude (Anthropic)
-export ANTHROPIC_API_KEY="..."
-
-# For OpenAI (ChatGPT)
-export OPENAI_API_KEY="..."
-
-# Make it persistent (add to ~/.bashrc or ~/.zshrc)
+Add to `~/.bashrc` or `~/.zshrc` for permanent setup:
+bash
 echo 'export ANTHROPIC_API_KEY="..."' >> ~/.zshrc
-echo 'export OPENAI_API_KEY="sk-..."' >> ~/.zshrc
+echo 'export OPENAI_API_KEY="..."' >> ~/.zshrc
 source ~/.zshrc
-```
 
----
 
-## 🎮 Usage
-
-### Basic Commands
-
-**Start with Claude (default):**
-```bash
+# Run
 python3 operatives.py
 ```
 
-**Start with OpenAI:**
+## ⚙️ Configuration
+
+
+Add to `~/.bashrc` or `~/.zshrc` for permanent setup:
 ```bash
-python3 operatives.py --api=openai
+echo 'export ANTHROPIC_API_KEY="..."' >> ~/.zshrc
+echo 'export OPENAI_API_KEY="..."' >> ~/.zshrc
+source ~/.zshrc
 ```
 
-**Disable auto-execute for safety:**
+### Flag Prefixes (`flag_prefixes.txt`)
+```text
+# CTF flag patterns (one per line)
+flag
+htb
+ctf
+thm
+picoctf
+root
+pwn
+```
+
+## 💡 Usage
+
+⚠️ **Warning**: By default, runs with **Claude** and **auto-execute enabled** (commands run automatically)
+
+### Starting Options
 ```bash
-python3 operatives.py --auto-execute=false
+python3 operatives.py                      # Claude (default)
+python3 operatives.py --api=openai        # ChatGPT
+python3 operatives.py --auto-execute=false # Manual mode (safer)
+python3 operatives.py --max-steps=25      # Custom steps
 ```
 
-**Custom max steps:**
+### Inline Flags (During Chat)
 ```bash
-python3 operatives.py --max-steps=25
+Scan target --model=heavy              # Force model weight
+Scan target --model=claude             # Force Claude API
+Scan target --model=openai             # Force OpenAI API
+Read file --auto-execute=false         # Override auto-exec
+Analyze --model=opus --max-steps=30    # Multiple flags
 ```
 
-**Get help:**
-```bash
-python3 operatives.py -h
-```
+### Session Commands
+- `:reset` - Clear history
+- `:files` - List session files
+- `:help` - Show help
+- `quit` - Exit
 
----
+## 🛠️ Tools
 
-## 💡 Inline Flags
+| Tool | Purpose |
+|------|---------|
+| `execute_command` | Shell commands |
+| `read_file` | Read text/hex/binary |
+| `write_file` | Save to `/tmp/` |
+| `nmap_scan` | Port scanning |
+| `strings_extract` | Binary analysis |
+| `decode_base64` | Base64 decode |
+| `compute_hash` | MD5/SHA hashes |
 
-Use these flags **during conversation** to override settings per-message:
+## 🤖 Models
 
-### `--model=MODEL`
-Force a specific model for the current message.
+| Alias | Claude | OpenAI |
+|-------|--------|--------|
+| `light` | Haiku 3.5 | GPT-3.5 |
+| `medium` | Sonnet 4.5 | GPT-4 |
+| `heavy` | Opus 4.1 | GPT-4 Turbo |
 
-**Examples:**
-```
-Scan target --model=light
-Deep analysis --model=heavy
-Quick check --model=gpt4
-```
+Use aliases: `--model=light` or specific: `--model=opus`
 
-**Available models:**
-- Generic: `light`, `medium`, `heavy`
-- Claude: `haiku`, `sonnet`, `opus`
-- OpenAI: `gpt3`, `gpt4`, `gpt4-turbo`
-
-### `--auto-execute=BOOL`
-Override auto-execute setting for this message.
-
-**Examples:**
-```
-Read /etc/passwd --auto-execute=false
-Scan network --auto-execute=true
-```
-
-### `--max-steps=N`
-Limit conversation steps for this request.
-
-**Example:**
-```
-Complex analysis --max-steps=30
-```
-
----
-
-## ⌨️ Session Commands
-
-Type these commands during your session:
-
-| Command | Description |
-|---------|-------------|
-| `:reset` | Clear conversation history (fresh context) |
-| `:files` | List all files created in this session |
-| `:cancel` | Kill currently running tool/process |
-| `:help` | Show inline flags and examples |
-| `quit` | Exit the agent |
-
----
-
-## 🛠️ Available Tools
-
-The AI can automatically use these tools:
-
-| Tool | Description |
-|------|-------------|
-| `execute_command` | Run shell commands on the system |
-| `read_file` | Read files in text, hex, or binary mode |
-| `write_file` | Save content to `/tmp/` (auto-tracked) |
-| `list_session_files` | Show files created this session |
-| `decode_base64` | Decode base64 encoded data |
-| `compute_hash` | Calculate MD5/SHA1/SHA256/SHA512 |
-| `nmap_scan` | Port scanning (quick/full/version) |
-| `strings_extract` | Extract printable strings from binaries |
-
----
-
-## 📝 Example Workflows
-
-### Basic CTF Challenge
+## 📝 Example Workflow
 
 ```bash
-👾 Operator [root]: Read the challenge file /tmp/challenge.txt
+# Quick recon with light model
+👾 Operator: Scan 10.10.10.5 --model=light
 
-🤖 Claude [sonnet]: I'll read that file for you.
-🔧 Tool: read_file
-✅ Result: [challenge description]
+🤖 Claude [haiku 3.5]: I'll perform a quick port scan on that target.
 
-👾 Operator [root]: Decode this base64: SGVsbG8gV29ybGQh
+🔧 Tool: [nmap_scan] 10.10.10.5 (quick)
+✅ Result:
+  PORT     STATE SERVICE
+  22/tcp   open  ssh
+  80/tcp   open  http
+  443/tcp  open  https
 
-🤖 Claude [sonnet]: Decoding...
-🔧 Tool: decode_base64
-✅ Result: Hello World!
+# Binary analysis
+👾 Operator: Extract strings from /tmp/binary
 
-👾 Operator [root]: Scan 10.10.10.50 --model=light
+🤖 Claude [sonnet 4.5]: I'll extract readable strings from that binary file.
 
-⠹ thinking...
-🤖 Claude [haiku]: Running quick nmap scan...
-🔧 Tool: nmap_scan
-✅ Result: [scan results]
-```
+🔧 Tool: [strings_extract] /tmp/binary
+✅ Result:
+  /lib64/ld-linux-x86-64.so.2
+  flag{found_the_hidden_string}
+  admin_password_123
 
-### Binary Analysis
+# Decode data
+👾 Operator: Decode the base64: ZmxhZ3tiYXNlNjRfZGVjb2RlZH0=
 
-```bash
-👾 Operator [root]: Extract strings from /tmp/malware.bin
+🤖 Claude [sonnet 4.5]: Let me decode that base64 string for you.
 
-🤖 ChatGPT [gpt-4]: Extracting printable strings...
-🔧 Tool: strings_extract
-✅ Result: [extracted strings with potential flags]
+🔧 Tool: [decode_base64] ZmxhZ3tiYXNlNjRfZGVjb2RlZH0=
+✅ Result: flag{base64_decoded}
 
-👾 Operator [root]: I see some encoded data, can you decode it?
-
-🤖 ChatGPT [gpt-4]: I'll decode and save it.
-🔧 Tool: write_file
-✅ Result: ✓ File saved to: /tmp/operative_abc123_456.bin
-
-👾 Operator [root]: :files
-
+# List created files
+👾 Operator: :files
 📁 Session Files:
-  • /tmp/operative_abc123_456.bin (bin)
+  • /tmp/operative_abc123_decoded.txt (txt)
+  • /tmp/operative_abc123_extracted.bin (bin)
+
+# Complex analysis with heavy model
+👾 Operator: Analyze this binary for vulnerabilities --model=heavy --max-steps=30
+
+🤖 Claude [opus 4.1]: I'll perform a comprehensive vulnerability analysis on the binary...
 ```
 
-### Using Different Models
+## 🔧 System Requirements
 
 ```bash
-# Quick reconnaissance with light model
-👾 Operator [root]: Check open ports --model=light
-
-# Deep analysis with heavy model
-👾 Operator [root]: Analyze exploit chain --model=heavy --max-steps=30
-
-# Switch APIs mid-workflow
-# (requires restarting with different --api flag)
+# Kali/Ubuntu
+sudo apt update
+sudo apt install python3 python3-pip nmap binutils -y
 ```
 
----
+## ⚠️ Security
 
-## 🎨 Banner Reference
-
-When you start the agent, you'll see:
-
-```
-╭────────────────────────────────────────────────────────────────────────────╮
-│ [*] Configuration                                                          │
-├────────────────────────────────────────────────────────────────────────────┤
-│ Active API: Claude                                                         │
-│ Provider: Anthropic                                                        │
-│ Auto-Execute: [x] Enabled                                                  │
-│ Max Steps: 15                                                              │
-├────────────────────────────────────────────────────────────────────────────┤
-│ Available Models:                                                          │
-│   - Claude Opus 4.1 (Heavy)                                                │
-│   - Claude Sonnet 4.5 (Medium)                                             │
-│   - Claude Haiku 3.5 (Light)                                               │
-╰────────────────────────────────────────────────────────────────────────────╯
-
-📋 Available Models:
-  • Claude Opus 4.1 (Heavy)
-  • Claude Sonnet 4.5 (Medium)
-  • Claude Haiku 3.5 (Light)
-
-💡 Quick Help:
-  Type natural language commands to interact with the agent
-  Use python3 operatives.py -h for detailed help
-  In-session: type :help or --help to see inline flags and examples
-  Commands: :reset (clear) | :files (list files) | :cancel (kill) | quit (exit)
-```
-
----
-
-## 🔒 Security Notes
-
-⚠️ **WARNING**: This tool has full shell access!
-
-- **Only use in isolated lab environments**
-- Never expose to untrusted networks
-- Use `--auto-execute=false` for unknown systems
-- Review tool execution before running
-- All files saved to `/tmp/` by default
-
----
+- **Lab environments only** - Full shell access
+- Use `--auto-execute=false` for safety
+- Files saved to `/tmp/` with unique IDs
+- Review commands before execution
 
 ## 🐛 Troubleshooting
 
-### "Anthropic SDK not installed"
 ```bash
-pip install anthropic
-```
+# Missing SDK
+pip install anthropic openai
 
-### "OpenAI SDK not installed"
-```bash
-pip install openai
-```
-
-### "Missing API key"
-```bash
-# Check environment variables
+# Check API keys
 echo $ANTHROPIC_API_KEY
 echo $OPENAI_API_KEY
 
-# Re-export if needed
-export ANTHROPIC_API_KEY="your-key-here"
+# Rate limits? Switch provider or use --model=light
 ```
 
-### API Rate Limits
-If you hit rate limits:
-1. Wait a few minutes
-2. Switch to the other API provider
-3. Use lighter models (`--model=light`)
-4. Reduce `--max-steps`
+## 💰 Cost Tips
 
-### Tools Not Found (nmap, strings, etc.)
-```bash
-# Kali/Ubuntu
-sudo apt install nmap binutils -y
-```
+- Use `light` models for simple tasks
+- Use `heavy` models only when needed
+- Monitor API usage in provider dashboards
 
 ---
 
-## 📦 Requirements.txt
-
-The `requirements.txt` includes:
-
-```
-anthropic>=0.39.0
-openai>=1.54.0
-```
-
-Install with:
-```bash
-pip install -r requirements.txt
-```
-
----
-
-## 💰 Cost Considerations
-
-Can be quite expensive :)
-
-💡 **Tip**: Use `light` models for simple tasks, `heavy` models only for complex analysis.
-
----
----
-
-**Happy Hacking! 🎯**
+**Built for CTFs and authorized security testing only** 🎯
