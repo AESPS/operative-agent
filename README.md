@@ -16,7 +16,6 @@ AI-Powered CTF & Security Analysis Agent with Multi-Model Support
 - ⚡ **Flexible Execution**: Auto-execute or manual approval for each tool
 - 🔧 **Inline Flags**: Override settings per-message (model, auto-execute, max-steps)
 - 📁 **Session Tracking**: Remember files created during conversation
-- 🎨 **Beautiful CLI**: Colorful output with animated thinking indicator
 
 ---
 
@@ -25,8 +24,8 @@ AI-Powered CTF & Security Analysis Agent with Multi-Model Support
 ### Clone Repository
 
 ```bash
-git clone https://github.com/AESPS/operative-ai.git
-cd operative-ai
+git clone https://github.com/AESPS/operative-agent.git
+cd operative-agent
 ```
 
 ### Requirements
