@@ -1,4 +1,4 @@
-AI-Powered CTF & Security Analysis Agent with Multi-Model Support
+
 ![Operative](./assets/operative_header.svg)
 
 
