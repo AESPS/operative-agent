@@ -492,13 +492,89 @@ class BaseAgent:
         raise NotImplementedError
 
     def truncate_history(self):
-        if len(self.conversation_history) <= self.max_history:
-            return
-        self.conversation_history = self.conversation_history[-self.max_history:]
+        while len(self.conversation_history) > self.max_history:
+            removed = self.conversation_history.pop(0)
+            orphan_ids = self._collect_tool_call_ids(removed)
+            if orphan_ids:
+                self._remove_tool_results_by_ids(orphan_ids)
 
     def chat(self, user_message: str, auto_execute: bool, inline_model: Optional[str] = None, 
              max_steps: int = DEFAULT_MAX_STEPS):
         raise NotImplementedError
+
+    def _collect_tool_call_ids(self, entry: Any) -> set:
+        ids = set()
+        if not isinstance(entry, dict):
+            return ids
+
+        role = entry.get("role")
+
+        # OpenAI-style tool calls
+        tool_calls = entry.get("tool_calls")
+        if isinstance(tool_calls, (list, tuple)):
+            for call in tool_calls:
+                call_id = None
+                if isinstance(call, dict):
+                    call_id = call.get("id") or call.get("tool_call_id")
+                else:
+                    call_id = getattr(call, "id", None) or getattr(call, "tool_call_id", None)
+                if call_id:
+                    ids.add(call_id)
+
+        # Anthropic-style tool_use blocks stored under content
+        content = entry.get("content")
+        if isinstance(content, (list, tuple)):
+            for block in content:
+                block_type = getattr(block, "type", None)
+                block_id = getattr(block, "id", None) or getattr(block, "tool_use_id", None)
+                if block_type != "tool_use" and isinstance(block, dict):
+                    block_type = block.get("type")
+                    block_id = block.get("id") or block.get("tool_use_id")
+                if block_type == "tool_use" and block_id:
+                    ids.add(block_id)
+
+                # tool_result entries referenced while trimming (when removing tool_result first)
+                if block_type == "tool_result" and block_id:
+                    ids.add(block_id)
+
+        # Tool-result entries themselves expose tool_call_id directly
+        if role == "tool":
+            call_id = entry.get("tool_call_id")
+            if call_id:
+                ids.add(call_id)
+
+        return ids
+
+    def _entry_references_tool_call(self, entry: Any, tool_call_ids: set) -> bool:
+        if not isinstance(entry, dict):
+            return False
+
+        role = entry.get("role")
+        if role == "tool":
+            return entry.get("tool_call_id") in tool_call_ids
+
+        if role == "user":
+            content = entry.get("content")
+            if isinstance(content, (list, tuple)):
+                for item in content:
+                    item_type = getattr(item, "type", None)
+                    item_id = getattr(item, "tool_use_id", None)
+                    if item_type != "tool_result" and isinstance(item, dict):
+                        item_type = item.get("type")
+                        item_id = item.get("tool_use_id")
+                    if item_type == "tool_result" and item_id in tool_call_ids:
+                        return True
+        return False
+
+    def _remove_tool_results_by_ids(self, tool_call_ids: set) -> None:
+        if not tool_call_ids:
+            return
+        filtered_history = []
+        for entry in self.conversation_history:
+            if self._entry_references_tool_call(entry, tool_call_ids):
+                continue
+            filtered_history.append(entry)
+        self.conversation_history = filtered_history
 
 # ---------- Claude Agent ----------
 class ClaudeAgent(BaseAgent):
