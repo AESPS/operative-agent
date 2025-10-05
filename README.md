@@ -1,4 +1,4 @@
-# 🎯 Operative - AI CTF & Security Agent
+# 🎯 Operative Agent
 ![Operative](./assets/operative_header.svg)
 **AI-Powered CTF & Security Analysis Agent with Multi-Model Support**
 
