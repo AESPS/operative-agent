@@ -19,7 +19,6 @@ export ANTHROPIC_API_KEY="..."  # For Claude
 export OPENAI_API_KEY="..."     # For ChatGPT
 
 Add to `~/.bashrc` or `~/.zshrc` for permanent setup:
-bash
 echo 'export ANTHROPIC_API_KEY="..."' >> ~/.zshrc
 echo 'export OPENAI_API_KEY="..."' >> ~/.zshrc
 source ~/.zshrc
