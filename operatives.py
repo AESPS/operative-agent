@@ -51,7 +51,29 @@ except ImportError:
 # ---------- Config ----------
 DEFAULT_MAX_STEPS = 15
 MAX_HISTORY_ENTRIES = 6
-HISTORY_FILE = os.path.expanduser("~/.sweagent_history")
+HISTORY_FILE = os.path.expanduser("~/.operativeagent_history")
+FLAG_PREFIXES_FILE = os.path.join(os.path.dirname(__file__), "flag_prefixes.txt")
+
+
+def load_flag_prefixes(path: str = FLAG_PREFIXES_FILE) -> List[str]:
+    prefixes: List[str] = []
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            for line in fh:
+                stripped = line.strip()
+                if not stripped or stripped.startswith("#"):
+                    continue
+                prefixes.append(stripped.lower())
+    except FileNotFoundError:
+        pass
+    # Fallback defaults if file missing or empty
+    if not prefixes:
+        prefixes = ["flag", "htb", "ctf"]
+    return prefixes
+
+
+FLAG_PREFIXES = load_flag_prefixes()
+FLAG_REGEX = re.compile(r"(" + "|".join(re.escape(p) for p in FLAG_PREFIXES) + r")\{.*?\}", re.IGNORECASE)
 
 # Anthropic Models
 CLAUDE_OPUS = "claude-opus-4-1-20250805"
@@ -115,6 +137,7 @@ class C:
     MUTED_BLUE = "\033[38;5;68m"    # Muted blue for [username] - darker than cyan
     ORANGE = "\033[38;5;208m"       # Orange color for labels
     PURPLE = "\033[38;5;141m"
+    MUSTARD = "\033[38;5;178m"      # Mustard yellow accent for tool headers
 def color(s: str, col: str) -> str:
     return f"{col}{s}{C.RESET}"
 
@@ -132,20 +155,107 @@ def display_width(text: str) -> int:
             width += 1
     return width
 
-# ---------- Utilities ----------
-def now_ts() -> str:
-    return time.strftime("%H:%M:%S")
 
+ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def strip_ansi(text: str) -> str:
+    """Remove ANSI escape sequences for width calculations."""
+    return ANSI_ESCAPE_RE.sub("", text)
+
+
+def summarize_text(value: str, max_preview: int = 60) -> Tuple[str, bool]:
+    """Return a readable preview of value plus flag indicating truncation."""
+    cleaned = value.replace("\r\n", "\n").replace("\r", "\n")
+    normalized = re.sub(r"\s+", " ", cleaned.replace("\n", " ↩ ")).strip()
+    truncated = False
+    preview = normalized or "(empty)"
+    if len(preview) > max_preview:
+        preview = preview[: max_preview - 1] + "…"
+        truncated = True
+    if "\n" in cleaned:
+        truncated = True
+    return preview, truncated
+
+
+def summarize_value(value: Any, max_preview: int = 80) -> str:
+    preview, _ = summarize_text(str(value), max_preview)
+    return preview
+
+
+def summarize_tool_args(tool_args: Any) -> Optional[str]:
+    if not tool_args:
+        return None
+
+    if isinstance(tool_args, dict):
+        if "command" in tool_args:
+            return summarize_value(tool_args["command"])
+        if "filepath" in tool_args:
+            return summarize_value(tool_args["filepath"])
+        if "target" in tool_args:
+            scan = tool_args.get("scan_type")
+            target = summarize_value(tool_args["target"])
+            return f"{target}" + (f" ({scan})" if scan else "")
+        for key in ("data", "content", "filename"):
+            if key in tool_args:
+                return summarize_value(tool_args[key])
+
+        for key, value in tool_args.items():
+            if isinstance(value, (dict, list)):
+                continue
+            return f"{key}={summarize_value(value)}"
+        return None
+
+    if isinstance(tool_args, list):
+        if not tool_args:
+            return None
+        joined = " ".join(str(item) for item in tool_args[:2])
+        return summarize_value(joined)
+
+    return summarize_value(tool_args)
+
+
+def print_tool_call(tool_name: str, tool_args: Optional[Any]) -> None:
+    print()
+    summary = summarize_tool_args(tool_args)
+    line = color("🔧 Tool:", C.MUSTARD + C.BOLD) + color(f" [{tool_name}]", C.MUSTARD)
+    if summary:
+        line += color(f" {summary}", C.MUSTARD)
+    print(line)
+
+
+def print_tool_result(preview_lines: List[str], result_color: str, full_path: Optional[str]) -> None:
+    if not preview_lines:
+        preview_lines = [color("(no output)", C.ORANGE)]
+
+    single_line = len(preview_lines) == 1 and "\n" not in preview_lines[0]
+
+    def color_body(text: str) -> str:
+        if "\033" in text:  # already colored (e.g., flag highlight)
+            return text
+        return color(text, C.MAGENTA)
+
+    if single_line:
+        body = color_body(preview_lines[0])
+        print(color("✅ Result:", C.DARK_GREEN + C.BOLD) + f" {body}")
+    else:
+        print(color("✅ Result:", C.DARK_GREEN + C.BOLD))
+        for line in preview_lines:
+            print(f"  {color_body(line)}")
+
+    if full_path:
+        print(color(f"  ↳ full output: {full_path}", C.ORANGE))
+    print()
+
+# ---------- Utilities ----------
 def highlight_flags(text: str) -> str:
-    return re.sub(r"(flag\{.*?\}|HTB\{.*?\}|CTF\{.*?\})", 
-                  lambda m: color(m.group(1), C.GREEN + C.BOLD), 
-                  text, flags=re.IGNORECASE)
+    return FLAG_REGEX.sub(lambda m: color(m.group(0), C.ORANGE + C.BOLD), text)
 
 def shorten_preview(text: str, length: int = 800) -> Tuple[str, Optional[str]]:
     if len(text) <= length:
         return text, None
     key = hashlib.sha256(text.encode()).hexdigest()[:16]
-    path = f"/tmp/sweagent_out_{key}.txt"
+    path = f"/tmp/operativeagent_out_{key}.txt"
     try:
         with open(path, "w") as fh:
             fh.write(text)
@@ -291,8 +401,6 @@ class ToolExecutor:
         try:
             if tool_name == "execute_command":
                 cmd = tool_input.get("command", "")
-                print(color(f"[{now_ts()}] ➜ running: {cmd}", C.YELLOW))
-                sys.stdout.flush()
                 return self.run_popen(cmd, shell=True, timeout=120)
 
             if tool_name == "read_file":
@@ -343,16 +451,12 @@ class ToolExecutor:
                     cmd = ["nmap", "-A", target]
                 else:
                     cmd = ["nmap", "-sV", target]
-                print(color(f"[{now_ts()}] ➜ nmap: {' '.join(cmd)}", C.YELLOW))
-                sys.stdout.flush()
                 return self.run_popen(cmd, shell=False, timeout=300)
 
             if tool_name == "strings_extract":
                 filepath = tool_input["filepath"]
                 min_length = str(tool_input.get("min_length", 4))
                 cmd = ["strings", "-n", min_length, filepath]
-                print(color(f"[{now_ts()}] ➜ strings: {' '.join(cmd)}", C.YELLOW))
-                sys.stdout.flush()
                 return self.run_popen(cmd, shell=False, timeout=120)
 
             return f"Unknown tool: {tool_name}"
@@ -489,7 +593,7 @@ class ClaudeAgent(BaseAgent):
             if text_blocks:
                 text = " ".join(text_blocks).strip()
                 model_display = self.get_model_display_name(model)
-                print(color(f"\n🤖 Claude", C.PURPLE + C.BOLD) + color(f" [{model_display}]", C.PURPLE) + color(": ", C.RESET) + highlight_flags(text) + "\n")
+                print(color(f"\n🤖 Claude", C.PURPLE + C.BOLD) + color(f" [{model_display}]", C.PURPLE) + color(": ", C.RESET) + highlight_flags(text))
 
             if tool_uses:
                 for t in tool_uses:
@@ -498,15 +602,15 @@ class ClaudeAgent(BaseAgent):
                     t_input = getattr(t, 'input', {})
                     t_id = getattr(t, 'id')
 
-                    print(color(f"🔧 Tool: {t_name}", C.MAGENTA))
-                    print(color(f"📝 Input: {json.dumps(t_input, indent=2)}", C.BRIGHT_BLACK))
+                    print_tool_call(t_name, t_input)
 
                     result = self._execute_tool_with_confirm(t_name, t_input, auto_execute)
-                    
+
                     preview, full_path = shorten_preview(result, 800)
-                    print(color(f"✅ Result:\n{highlight_flags(preview)}\n", C.GREEN if "flag{" in result.lower() else C.CYAN))
-                    if full_path:
-                        print(color(f"[full output: {full_path}]", C.DIM))
+                    result_color = C.GREEN + C.BOLD if "flag{" in result.lower() else C.CYAN
+                    preview_text = highlight_flags(preview)
+                    preview_lines = preview_text.splitlines() if preview_text else []
+                    print_tool_result(preview_lines, result_color, full_path)
 
                     tool_result_obj = {"type": "tool_result", "tool_use_id": t_id, 
                                       "content": [{"type": "text", "text": result}]}
@@ -721,7 +825,7 @@ class OpenAIAgent(BaseAgent):
             # Always show text content first if present, OR show generic message if going straight to tools
             if message.content:
                 model_display = self.get_model_display_name(model)
-                print(color(f"\n🤖 ChatGPT", C.PURPLE + C.BOLD) + color(f" [{model_display}]", C.PURPLE) + color(": ", C.RESET) + highlight_flags(message.content) + "\n")
+                print(color(f"\n🤖 ChatGPT", C.PURPLE + C.BOLD) + color(f" [{model_display}]", C.PURPLE) + color(": ", C.RESET) + highlight_flags(message.content))
             elif message.tool_calls:
                 # If no text but has tool calls, print a blank line for spacing
                 print()
@@ -744,15 +848,15 @@ class OpenAIAgent(BaseAgent):
                         # Try to continue with empty args
                         func_args = {}
 
-                    print(color(f"🔧 Tool: {func_name}", C.MAGENTA))
-                    print(color(f"📝 Input: {json.dumps(func_args, indent=2)}", C.BRIGHT_BLACK))
+                    print_tool_call(func_name, func_args)
 
                     result = self._execute_tool_with_confirm(func_name, func_args, auto_execute)
-                    
+
                     preview, full_path = shorten_preview(result, 800)
-                    print(color(f"✅ Result:\n{highlight_flags(preview)}\n", C.GREEN if "flag{" in result.lower() else C.CYAN))
-                    if full_path:
-                        print(color(f"[full output: {full_path}]", C.DIM))
+                    result_color = C.DARK_GREEN + C.BOLD if "flag{" in result.lower() else C.ORANGE
+                    preview_text = highlight_flags(preview)
+                    preview_lines = preview_text.splitlines() if preview_text else []
+                    print_tool_result(preview_lines, result_color, full_path)
 
                     self.conversation_history.append({
                         "role": "tool",
