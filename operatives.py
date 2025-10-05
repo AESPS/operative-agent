@@ -25,6 +25,8 @@ import getpass
 import hashlib
 import threading
 import unicodedata
+import tempfile
+import shlex
 from typing import Tuple, Optional, List, Dict, Any
 
 # readline for nicer input and persistent history
@@ -74,6 +76,38 @@ def load_flag_prefixes(path: str = FLAG_PREFIXES_FILE) -> List[str]:
 
 FLAG_PREFIXES = load_flag_prefixes()
 FLAG_REGEX = re.compile(r"(" + "|".join(re.escape(p) for p in FLAG_PREFIXES) + r")\{.*?\}", re.IGNORECASE)
+
+CTF_REFERENCE_TEXT = """\
+File Recon:
+  file target
+  strings target | grep -i flag
+  strings target | grep -i picoCTF
+  binwalk -e firmware.bin
+
+Web Recon:
+  curl -I https://target
+  curl https://target/robots.txt
+  whatweb https://target
+  ffuf -c -w wordlist.txt -u https://target/FUZZ
+
+Credential Hunting:
+  find . -type f -name "*.bak" -maxdepth 4
+  grep -R "password" .
+  grep -R "flag{" .
+
+Forensics:
+  exiftool image.jpg
+  stegseek hidden.jpg rockyou.txt
+  mmls disk.dd
+  fls -r -o OFFSET disk.dd
+  strings disk.dd | grep -i flag
+
+Networking:
+  nc host port
+  nmap -sV -p- host
+  tcpdump -i tun0
+"""
+
 
 # Anthropic Models
 CLAUDE_OPUS = "claude-opus-4-1-20250805"
@@ -138,7 +172,30 @@ class C:
     ORANGE = "\033[38;5;208m"       # Orange color for labels
     PURPLE = "\033[38;5;141m"
     MUSTARD = "\033[38;5;178m"      # Mustard yellow accent for tool headers
+ENABLE_COLOR = (
+    sys.stdout.isatty()
+    and os.environ.get('NO_COLOR') is None
+    and os.environ.get('TERM', '') not in {'', 'dumb'}
+)
+SUPPORTS_UNICODE = hasattr(sys.stdout, 'encoding') and sys.stdout.encoding is not None
+if SUPPORTS_UNICODE:
+    try:
+        '┌'.encode(sys.stdout.encoding)
+        '👾'.encode(sys.stdout.encoding)
+    except UnicodeEncodeError:
+        SUPPORTS_UNICODE = False
+PROMPT_STYLE = os.environ.get('OPERATIVE_PROMPT_STYLE', 'auto').lower()
+if PROMPT_STYLE in {'emoji', 'fancy'}:
+    USE_FANCY_PROMPT = SUPPORTS_UNICODE
+elif PROMPT_STYLE in {'plain', 'ascii'}:
+    USE_FANCY_PROMPT = False
+else:  # auto fallback prefers reliable ASCII prompt
+    USE_FANCY_PROMPT = False
+
+
 def color(s: str, col: str) -> str:
+    if not ENABLE_COLOR:
+        return s
     return f"{col}{s}{C.RESET}"
 
 
@@ -162,6 +219,13 @@ ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")
 def strip_ansi(text: str) -> str:
     """Remove ANSI escape sequences for width calculations."""
     return ANSI_ESCAPE_RE.sub("", text)
+
+
+def wrap_prompt_ansi(text: str) -> str:
+    """Wrap ANSI escapes so readline counts prompt width correctly."""
+    if not readline or not ENABLE_COLOR:
+        return text
+    return ANSI_ESCAPE_RE.sub(lambda match: f"{match.group(0)}", text)
 
 
 def summarize_text(value: str, max_preview: int = 60) -> Tuple[str, bool]:
@@ -255,7 +319,8 @@ def shorten_preview(text: str, length: int = 800) -> Tuple[str, Optional[str]]:
     if len(text) <= length:
         return text, None
     key = hashlib.sha256(text.encode()).hexdigest()[:16]
-    path = f"/tmp/operativeagent_out_{key}.txt"
+    tmp_dir = tempfile.gettempdir()
+    path = os.path.join(tmp_dir, f"operativeagent_out_{key}.txt")
     try:
         with open(path, "w") as fh:
             fh.write(text)
@@ -299,22 +364,32 @@ class ToolExecutor:
         self._current_proc = None
         self.session_files = {}  # Track files created during session
         self.session_id = hashlib.md5(str(time.time()).encode()).hexdigest()[:8]
+        self.temp_dir = tempfile.gettempdir()
         
+    def _sanitize_filename(self, requested: Optional[str], extension: str, timestamp: int) -> str:
+        base_name = f"operative_{self.session_id}_{timestamp}"
+        if requested:
+            candidate = os.path.splitext(os.path.basename(requested))[0]
+            candidate = re.sub(r"[^A-Za-z0-9._-]", "_", candidate)
+            candidate = candidate.strip("._-")
+            if candidate:
+                base_name = candidate
+        clean_extension = re.sub(r"[^A-Za-z0-9]", "", extension) or "txt"
+        return f"{base_name}.{clean_extension}"
+
     def save_to_tmp(self, content: str, filename: str = None, extension: str = "txt") -> str:
-        """Save content to /tmp/ and track it"""
-        if filename is None:
-            timestamp = int(time.time())
-            filename = f"operative_{self.session_id}_{timestamp}.{extension}"
-        
-        filepath = f"/tmp/{filename}"
-        
+        """Save content to the temp directory and track it."""
+        timestamp = int(time.time())
+        safe_name = self._sanitize_filename(filename, extension, timestamp)
+        filepath = os.path.join(self.temp_dir, safe_name)
+
         try:
-            # Determine if content is binary or text
+            os.makedirs(self.temp_dir, exist_ok=True)
             if extension in ["bin", "exe", "elf"]:
-                # Try to decode as hex first, then base64
                 try:
-                    if all(c in '0123456789abcdefABCDEF' for c in content.replace(' ', '').replace('\n', '')):
-                        binary_data = bytes.fromhex(content.replace(' ', '').replace('\n', ''))
+                    cleaned = content.replace(' ', '').replace('\n', '')
+                    if cleaned and all(c in '0123456789abcdefABCDEF' for c in cleaned):
+                        binary_data = bytes.fromhex(cleaned)
                     else:
                         binary_data = base64.b64decode(content)
                     with open(filepath, "wb") as f:
@@ -325,22 +400,20 @@ class ToolExecutor:
             else:
                 with open(filepath, "w") as f:
                     f.write(content)
-            
-            # Make executable if script
+
             if extension in ["sh", "py", "pl", "rb"]:
                 os.chmod(filepath, 0o755)
-            
-            # Track the file
-            self.session_files[filename] = {
+
+            self.session_files[safe_name] = {
                 "path": filepath,
                 "extension": extension,
                 "created": time.time()
             }
-            
+
             return filepath
         except Exception as e:
             return f"Error saving file: {e}"
-    
+
     def get_session_files(self) -> str:
         """Return list of files created in this session"""
         if not self.session_files:
@@ -362,7 +435,38 @@ class ToolExecutor:
         context += "Use these paths when referencing files from earlier in the conversation.]\n"
         return context
 
+    def _normalize_command(self, cmd: Any, shell: bool):
+        """Normalise tool command inputs for Popen."""
+        if isinstance(cmd, dict):
+            for key in ("command", "cmd", "args"):
+                if key in cmd:
+                    return self._normalize_command(cmd[key], shell)
+            return None
+        if isinstance(cmd, str):
+            clean = cmd.strip()
+            if not clean:
+                return None
+            if shell:
+                return clean
+            return shlex.split(clean)
+        if shell and isinstance(cmd, (list, tuple)):
+            operators = {"|", "||", "&&", ";", "&", ">", "<<", ">>", "<", "2>", "2>>"}
+            rendered = []
+            for part in cmd:
+                part_str = str(part)
+                if part_str in operators:
+                    rendered.append(part_str)
+                else:
+                    rendered.append(shlex.quote(part_str))
+            return " ".join(rendered)
+        if not shell and isinstance(cmd, (list, tuple)):
+            return [str(part) for part in cmd]
+        return cmd
+
     def run_popen(self, cmd, shell=False, timeout=None):
+        cmd = self._normalize_command(cmd, shell)
+        if cmd is None or cmd == []:
+            return "Tool error: empty command"
         try:
             proc = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE, 
                                    stderr=subprocess.PIPE, text=True)
@@ -1101,7 +1205,17 @@ def save_history():
 
 def prompt_string() -> str:
     whoami = getpass.getuser()
-    return color(f"👾 Operator", C.CYAN + C.BOLD) + color(f" [{whoami}]", C.MUTED_BLUE) + color(": ", C.RESET)
+    glyph = "👾 " if USE_FANCY_PROMPT else ""
+    label = f"{glyph}Operator"
+    if ENABLE_COLOR:
+        prompt = color(label, C.CYAN + C.BOLD) + color(f" [{whoami}]", C.MUTED_BLUE) + color(": ", C.RESET)
+        return wrap_prompt_ansi(prompt)
+    return f"{label} [{whoami}]: "
+
+
+
+
+
 
 # ---------- Thinking Animation ----------
 class ThinkingAnimation:
@@ -1132,9 +1246,24 @@ class ThinkingAnimation:
             self.running = False
             if self.thread:
                 self.thread.join(timeout=0.5)
+                self.thread = None
             # Clear the thinking line
-            sys.stdout.write("\r" + " " * 20 + "\r")
+            sys.stdout.write("\r" + " " * 60 + "\r")
             sys.stdout.flush()
+
+def print_ctf_reference():
+    """Print a lightweight CTF cheat sheet."""
+    print(color("\nCTF Quick Reference", C.BLUE + C.BOLD))
+    for line in CTF_REFERENCE_TEXT.strip().splitlines():
+        stripped = line.strip()
+        if not stripped:
+            print()
+            continue
+        if stripped.endswith(":"):
+            print(color(f"  {stripped}", C.MAGENTA + C.BOLD))
+        else:
+            print(f"    {line}")
+    print()
 
 def print_session_help():
     """Print colorful help banner during session"""
@@ -1161,6 +1290,7 @@ def print_session_help():
     print(color("  :reset  ", C.CYAN) + "  Clear conversation history (fresh context)")
     print(color("  :files  ", C.CYAN) + "  List files created in this session")
     print(color("  :cancel ", C.CYAN) + "  Kill currently running tool/process")
+    print(color("  :reference", C.CYAN) + "  Show CTF quick reference")
     print(color("  :help   ", C.CYAN) + "  Show this help message")
     print(color("  quit    ", C.CYAN) + "  Exit the agent")
     
@@ -1331,6 +1461,10 @@ The AI will automatically choose and execute tools based on your requests.
 
             if raw_strip.lower() in (":help", "-h", "--help", "help"):
                 print_session_help()
+                continue
+            
+            if raw_strip.lower() in (":reference", ":ctf", ":cheatsheet"):
+                print_ctf_reference()
                 continue
             
             if raw_strip.lower() in (":files", ":ls", "ls"):
