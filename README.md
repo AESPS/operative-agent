@@ -2,18 +2,22 @@
 ![Operative](./assets/operative_header.svg)
 **AI-Powered CTF & Security Analysis Agent with Multi-Model Support**
 
----
 ## 📋 Features
-```
-🤖 Multi-Model Support: Switch between Claude (Opus, Sonnet, Haiku) and OpenAI (GPT-4, GPT-3.5)
-🛠️ Built-in Security Tools: nmap, strings, file operations, encoding/decoding
-💾 Smart File Management: Automatically saves decoded/generated files to /tmp/
-🎯 CTF Optimized: Flag detection, shellcode analysis, binary inspection
-⚡ Flexible Execution: Auto-execute or manual approval for each tool
-🔧 Inline Flags: Override settings per-message (model, auto-execute, max-steps)
-📁 Session Tracking: Remember files created during conversation
-```
+
+- 🤖 **Multi-Model Support**: Switch between Claude (Opus, Sonnet, Haiku) and OpenAI (GPT-4, GPT-3.5)
+- 🛠️ **Built-in Security Tools**: nmap, strings, file operations, encoding/decoding
+- 💾 **Smart File Management**: Automatically saves decoded/generated files to `/tmp/`
+- 🎯 **CTF Optimized**: Flag detection, shellcode analysis, binary inspection
+- ⚡ **Flexible Execution**: Auto-execute or manual approval for each tool
+- 🔧 **Inline Flags**: Override settings per-message (model, auto-execute, max-steps)
+- 📁 **Session Tracking**: Remember files created during conversation
+
+---
+
 ## 🚀 Installation
+
+### Clone Repository
+
 
 ```bash
 # Clone the arsenal
