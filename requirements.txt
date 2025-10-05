@@ -1,0 +1,13 @@
+# Operative Agent - Python Dependencies
+
+# Anthropic Claude API
+anthropic>=0.39.0
+
+# OpenAI ChatGPT API
+openai>=1.54.0
+
+# Note: System tools required (install via apt):
+# - nmap: sudo apt install nmap
+# - strings: sudo apt install binutils
+# - xxd: sudo apt install xxd (usually pre-installed)
+# - openssl: sudo apt install openssl (usually pre-installed)
