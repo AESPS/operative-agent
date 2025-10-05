@@ -10,9 +10,7 @@ AI-Powered CTF & Security Analysis Agent with Multi-Model Support
 ╚██████╔╝██║     ███████╗██║  ██║██║  ██║   ██║   ██║ ╚████╔╝ ███████╗
  ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═══╝  ╚══════╝
 ```
-<div align="center">
-  <img src="./assets/operative-header.svg" alt="Operative" width="800"/>
-</div>
+![Operative](./assets/operative_header.svg)
 
 
 **Operative AI** is an intelligent agent that combines Claude and ChatGPT APIs with local Kali Linux security tools for automated CTF challenges, penetration testing, and security research.
