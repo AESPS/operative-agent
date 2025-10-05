@@ -211,7 +211,7 @@ sudo apt install -y nmap binutils
 
 **⚡ For authorized testing only. You are responsible for your actions.**
 
-##⚠️ Note
+## ⚠️ Note
 ```
 -  This AI-powered CTF agent can be really helpful in your cybersecurity journey, but keep these points in mind:
 -  AI isn’t perfect: It can make mistakes or “hallucinate” answers. Always double-check what it suggests.
