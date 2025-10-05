@@ -83,7 +83,7 @@ export OPENAI_API_KEY="..."
 # Make it persistent (add to ~/.bashrc or ~/.zshrc)
 echo 'export ANTHROPIC_API_KEY="..."' >> ~/.zshrc
 echo 'export OPENAI_API_KEY="sk-..."' >> ~/.zshrc
-source ~/.bashrc
+source ~/.zshrc
 ```
 
 ---
