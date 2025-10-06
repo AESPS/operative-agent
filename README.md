@@ -34,13 +34,13 @@ git clone https://github.com/AESPS/operative-agent.git && cd operative-agent
 # Initialize environment
 python3 -m venv venv && source venv/bin/activate
 ```
-# Load dependencies
+### Load dependencies
 ```bash
 pip install anthropic openai
 pip install -r requirements.txt
 ```
 
-# Configure access keys (choose your method)
+### Configure access keys (choose your method)
 
 ## [Method 1] Session-only injection
 ```bash
