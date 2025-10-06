@@ -4,7 +4,7 @@
 
 ## 📋 Features
 - 🐧 Built for Kali Linux: Optimized for CTF and ~~pentesting~~ must only be use in lab and isolated that you own! 
-- 🤖 **Multi-Model Support**: Switch between Claude (Opus, Sonnet, Haiku) and OpenAI (GPT-4o, GPT-4o Mini, GPT-3.5)
+- 🤖 **Multi-Model Support**: Switch between Claude and OpenAI 
 - 🛠️ **Built-in Security Tools**: nmap, strings, file operations, encoding/decoding
 - 💾 **Smart File Management**: Automatically saves decoded/generated files to `/tmp/`
 - 🎯 **CTF Optimized**: Flag detection, shellcode analysis, binary inspection
