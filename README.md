@@ -27,13 +27,11 @@ Watch **Operative** engage a real CTF malware challenge.
 ## 🚀 Installation
 
 ### Clone Repository
-
+```bash
 # Clone the arsenal
-```bash
 git clone https://github.com/AESPS/operative-agent.git && cd operative-agent
-```
+
 # Initialize environment
-```bash
 python3 -m venv venv && source venv/bin/activate
 ```
 # Load dependencies
