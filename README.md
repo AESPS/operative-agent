@@ -14,8 +14,7 @@
 
 ---
 
-![Watch the video](https://github.com/AESPS/operative-agent/blob/48f9f2690fb66aebd01865763989a2929ba326c3/assets/operative.mp4)
-https://github.com/AESPS/operative-agent/blob/48f9f2690fb66aebd01865763989a2929ba326c3/assets/operative.mp4
+[![Watch the video](assets/thumbnail.png)](assets/operative.mp4)
 
 ---
 ## 🚀 Installation
