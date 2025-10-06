@@ -42,12 +42,12 @@ pip install -r requirements.txt
 
 ### Configure access keys (choose your method)
 
-## [Method 1] Session-only injection
+### [Method 1] Session-only injection
 ```bash
 export ANTHROPIC_API_KEY="..."  # Claude access
 export OPENAI_API_KEY="..."     # GPT access
 ```
-## [Method 2] Persistent configuration
+#### [Method 2] Persistent configuration
 ```bash
 echo 'export ANTHROPIC_API_KEY="..."' >> ~/.zshrc && \
 echo 'export OPENAI_API_KEY="..."' >> ~/.zshrc && \
