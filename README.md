@@ -16,6 +16,8 @@
 
 https://github.com/user-attachments/assets/f3b18c96-5f24-4a58-a6ef-a39aba65f633
 
+## 🧩 Demo: Operative Agent Solving a Malware CTF
+
 Watch **Operative** engage a live CTF malware challenge.  
 🎥 **30-second showcase**, running at **4× speed**.  
 ⏱️ **Real execution time:** ~2 minutes from the first prompt to completion.
