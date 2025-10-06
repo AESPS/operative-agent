@@ -83,7 +83,7 @@ sudo apt update && sudo apt install -y python3 python3-pip nmap binutils
 
 ⚠️ **DEFAULT MODE**: Claude API + **AUTO-EXECUTE ENABLED** (runs commands without confirmation)
     
-   **TOKEN**:   Ia cani tu kalau heavy model nya capat makan token. Mahal tia jadi nya. Save duit pakai --mode=light sja awo
+   **TOKEN**:   Ia cani tu kalau heavy model nya capat makan token. Mahal tia jadi nya. Save duit pakai --model=light sja awo
    
 ### Launch Configurations
 ```bash
