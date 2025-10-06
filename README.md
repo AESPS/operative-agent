@@ -11,7 +11,7 @@
 - ⚡ **Flexible Execution**: Auto-execute or manual approval for each tool
 - 🔧 **Inline Flags**: Override settings per-message (model, auto-execute, max-steps)
 - 📁 **Session Tracking**: Remember files created during conversation
-- 💰 **Cons - Mahal eh, bali kridit $5 inda batah tu. Nasi katok dapat 5 kanyang makan awo
+- 💰 **Cons** - Mahal eh, bali kridit $5 inda batah tu. Nasi katok dapat 5 kanyang makan awo
 
 ---
 
