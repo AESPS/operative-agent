@@ -135,7 +135,7 @@ python3 operatives.py --max-steps=25      # Extended operation limit
 ```
 :reset     → Wipe conversation memory (reset, clear-history)
 :files     → List session artifacts (:ls, ls)
-:paste     Multi-line paste mode - Type :paste, paste content, type END to finish
+:paste     → Multi-line paste mode - Type :paste, paste content, type END to finish
 :help      → Display attack vectors (help, -h, --help)
 :cancel    → Kill running process (SIGTERM)
 :reference → Show CTF cheatsheet (:ctf, :cheatsheet)
