@@ -100,28 +100,19 @@ python3 operatives.py --max-steps=25      # Extended operation limit
 [>] Scan target --model=medium             # Balanced approach
 [>] Scan target --model=light              # Fast recon
 
-# Specific Model Selection
-[>] Scan target --model=opus               # Force Claude Opus 4.1
-[>] Scan target --model=sonnet             # Force Claude Sonnet 4.5
-[>] Scan target --model=haiku              # Force Claude Haiku 3.5
-[>] Scan target --model=gpt4o              # Force GPT-4o
-[>] Scan target --model=gpt4o-mini         # Force GPT-4o Mini
-[>] Scan target --model=gpt3               # Force GPT-3.5 Turbo
-
 # Execution Control
 [>] Extract data --auto-execute=false      # Selective safety
 [>] Pwn box --model=opus --max-steps=50    # Full send mode
 ```
+---
 
-### Control Sequences
-```
-:reset     → Wipe conversation memory (reset, clear-history)
-:files     → List session artifacts (:ls, ls)
-:help      → Display attack vectors (help, -h, --help)
-:cancel    → Kill running process (SIGTERM)
-:reference → Show CTF cheatsheet (:ctf, :cheatsheet)
-quit       → Terminate session (exit, q)
-```
+## 🤖 Model Arsenal
+
+| Alias | Claude | OpenAI | Power | Cost |
+|-------|--------|--------|-------|------|
+| `light` | Haiku 3.5 | GPT-3.5 Turbo | ⚡ Fast | $ |
+| `medium` | Sonnet 4.5 | GPT-4o Mini | 💪 Balanced | $ |
+| `heavy` | Opus 4.1 | GPT-4o | 🔥 Maximum | $$ |
 
 ---
 
@@ -140,21 +131,16 @@ quit       → Terminate session (exit, q)
 
 ---
 
-## 🤖 Model Arsenal
-
-| Alias | Claude | OpenAI | Power | Cost |
-|-------|--------|--------|-------|------|
-| `light` | Haiku 3.5 | GPT-3.5 Turbo | ⚡ Fast | $ |
-| `medium` | Sonnet 4.5 | GPT-4o Mini | 💪 Balanced | $ |
-| `heavy` | Opus 4.1 | GPT-4o | 🔥 Maximum | $$ |
-
-**Usage:**
-```bash
---model=light          # Fast and cheap
---model=medium         # Balanced (default)
---model=heavy          # Maximum capability
+### Control Sequences
 ```
-
+:reset     → Wipe conversation memory (reset, clear-history)
+:files     → List session artifacts (:ls, ls)
+:paste     Multi-line paste mode - Type :paste, paste content, type END to finish
+:help      → Display attack vectors (help, -h, --help)
+:cancel    → Kill running process (SIGTERM)
+:reference → Show CTF cheatsheet (:ctf, :cheatsheet)
+quit       → Terminate session (exit, q)
+```
 ---
 
 ## 📝 Attack Chain Example
