@@ -82,7 +82,9 @@ sudo apt update && sudo apt install -y python3 python3-pip nmap binutils
 ## 💀 Usage & Exploitation
 
 ⚠️ **DEFAULT MODE**: Claude API + **AUTO-EXECUTE ENABLED** (runs commands without confirmation)
-
+    
+    Ia cani tu kalau heavy model nya capat makan token. Mahal tia jadi nya. Save duit pakai --mode=light sja awo
+    
 ### Launch Configurations
 ```bash
 python3 operatives.py                      # Default: Claude + auto-pwn
@@ -93,7 +95,7 @@ python3 operatives.py --max-steps=25      # Extended operation limit
 
 ### Runtime Overrides (Hot-Swap During Session)
 ```bash
-Ia cani tu kalau heavy model nya capat makan token. Mahal tia jadi nya. Save duit pakai --mode=light sja awo
+
 [>] Scan target --model=heavy              # Maximum firepower
 [>] Scan target --model=claude             # Force Claude backend
 [>] Scan target --model=openai             # Force GPT backend
