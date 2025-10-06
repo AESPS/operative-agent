@@ -14,14 +14,13 @@
 
 ---
 
-[https://github.com/user-attachments/assets/f3b18c96-5f24-4a58-a6ef-a39aba65f633
-# This is example usage solving a real ctf challenges, malware category. It took about ≤ 3 minutes](https://github.com/user-attachments/assets/f3b18c96-5f24-4a58-a6ef-a39aba65f633
+https://github.com/user-attachments/assets/f3b18c96-5f24-4a58-a6ef-a39aba65f633
 
 ## 🧩 Demo: Operative Agent Solving a Malware CTF
 
 This short **30-second demo** shows Operative executing a full malware challenge workflow.  
 ⚡ The clip is played at **4× speed** — actual run time is about **2 minutes** from the first prompt.
-)
+
 
 ---
 ## 🚀 Installation
