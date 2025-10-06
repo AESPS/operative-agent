@@ -28,7 +28,7 @@ python3 -m venv venv && source venv/bin/activate
 
 # Load dependencies
 pip install anthropic openai
-pip install requirements.txt
+pip install -r requirements.txt
 
 # Configure access keys (choose your method)
 
