@@ -117,8 +117,6 @@ CLAUDE_HAIKU = "claude-3-5-haiku-20241022"
 # OpenAI Models
 GPT4O = "gpt-4o"
 GPT4O_MINI = "gpt-4o-mini"
-GPT4_TURBO = "gpt-4-turbo-preview"
-GPT4 = "gpt-4"
 GPT35_TURBO = "gpt-3.5-turbo"
 
 CLAUDE_MODELS = {
@@ -131,32 +129,12 @@ OPENAI_MODELS = {
     GPT4O: "GPT-4o (Heavy)",
     GPT4O_MINI: "GPT-4o Mini (Medium)",
     GPT35_TURBO: "GPT-3.5 Turbo (Light)",
-    GPT4_TURBO: "GPT-4 Turbo (Legacy)",
-    GPT4: "GPT-4 (Legacy)",
 }
 
 # Unified aliases
 MODEL_ALIASES = {
-    # Claude
-    "claude-light": CLAUDE_HAIKU,
-    "claude-medium": CLAUDE_SONNET,
-    "claude-heavy": CLAUDE_OPUS,
-    "haiku": CLAUDE_HAIKU,
-    "sonnet": CLAUDE_SONNET,
-    "opus": CLAUDE_OPUS,
-    # OpenAI
-    "gpt-light": GPT35_TURBO,
-    "gpt-medium": GPT4O_MINI,
-    "gpt-heavy": GPT4O,
-    "gpt3": GPT35_TURBO,
-    "gpt4": GPT4,
-    "gpt-4o": GPT4O,
-    "gpt4o": GPT4O,
-    "gpt4o-mini": GPT4O_MINI,
-    "gpt-4o-mini": GPT4O_MINI,
-    "gpt4-turbo": GPT4_TURBO,
-    # Generic
-    "light": None,  # Will be set based on provider
+    # Generic (set based on provider)
+    "light": None,
     "medium": None,
     "heavy": None,
 }
@@ -576,15 +554,6 @@ class ToolExecutor:
         except Exception as e:
             return f"Tool error: {e}"
 
-    def cancel_current_tool(self):
-        if self._current_proc:
-            try:
-                self._current_proc.kill()
-                self._current_proc = None
-                return True
-            except Exception:
-                return False
-        return False
 
 # ---------- Base Agent ----------
 class BaseAgent:
@@ -1195,15 +1164,6 @@ def print_banner(api_provider: str, default_auto_exec: bool, default_max_steps: 
     print(color("\n💡 Quick Help:", C.BLUE + C.BOLD))
     print(f"  Type natural language commands to interact with the agent")
     print(f"  Use {color('python3 operatives.py -h', C.YELLOW)} for detailed help")
-    print(f"  In-session: type {color(':help', C.CYAN)} or {color('--help', C.CYAN)} to see inline flags and examples")
-    print(
-        f"  Commands: {color(':reset', C.CYAN)} (reset/clear-history) | "
-        f"{color(':files', C.CYAN)} (:ls/ls) | "
-        f"{color(':reference', C.CYAN)} (:ctf/:cheatsheet) | "
-        f"{color(':help', C.CYAN)} (help/-h/--help) | "
-        f"{color(':cancel', C.CYAN)} | "
-        f"{color('quit', C.CYAN)} (exit/q)"
-    )
     print()
 
 def setup_readline():
@@ -1289,8 +1249,8 @@ def print_session_help():
     
     print(color("\n🔧 INLINE FLAGS", C.YELLOW + C.BOLD))
     print(color("  Use these in your messages to override settings:\n", C.BRIGHT_BLACK))
-    print(color("  --model=MODEL", C.GREEN) + "           Force specific model")
-    print(color("                          ", C.BRIGHT_BLACK) + "Examples: light, medium, heavy, gpt4o, gpt4, sonnet")
+    print(color("\n  --model=MODEL", C.GREEN) + "           Select model tier")
+    print(color("                          ", C.BRIGHT_BLACK) + "Options: light, medium, heavy")
     print(color("\n  --auto-execute=BOOL", C.GREEN) + "     Override auto-execute for this message")
     print(color("                          ", C.BRIGHT_BLACK) + "Values: true, false")
     print(color("\n  --max-steps=N", C.GREEN) + "           Limit conversation steps")
@@ -1300,12 +1260,12 @@ def print_session_help():
     print(color("  Scan 10.10.10.5 --model=light", C.BRIGHT_BLACK))
     print(color("  Read /etc/passwd --auto-execute=false", C.BRIGHT_BLACK))
     print(color("  Analyze binary --model=heavy --max-steps=30", C.BRIGHT_BLACK))
-    print(color("  Quick recon --model=gpt3", C.BRIGHT_BLACK))
+    print(color("  Quick recon --model=medium", C.BRIGHT_BLACK))
     
     print(color("\n⌨  SESSION COMMANDS", C.BLUE + C.BOLD))
     print(color("  :reset  ", C.CYAN) + "  Clear conversation history (aliases: reset, clear-history)")
     print(color("  :files  ", C.CYAN) + "  List files created this session (aliases: :ls, ls)")
-    print(color("  :cancel ", C.CYAN) + "  Kill currently running tool/process")
+    print(color("  :paste  ", C.CYAN) + "  Multi-line paste mode (aliases: paste) Usage: Type :paste, paste content, then type END on new line")
     print(color("  :reference", C.CYAN) + "  Show CTF quick reference (aliases: :ctf, :cheatsheet)")
     print(color("  :help   ", C.CYAN) + "  Show this help message (aliases: help, -h, --help)")
     print(color("  quit    ", C.CYAN) + "  Exit the agent (aliases: exit, q)")
@@ -1352,8 +1312,8 @@ def main():
 
 Use these flags in your messages to override settings per-request:
 
-  --model=MODEL           Force specific model
-                          Examples: light, medium, heavy, gpt4o, gpt4, sonnet
+  --model=MODEL           Select model tier
+                          Options: light, medium, heavy
   
   --auto-execute=BOOL     Override auto-execute for this message
                           Values: true, false
@@ -1369,7 +1329,7 @@ Chat Examples:
   
   👾 Operator Deep analysis of this binary --model=heavy --max-steps=30
   
-  👾 Operator Quick recon --model=gpt3
+  👾 Operator Quick recon --model=light
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                           ⌨  SESSION COMMANDS
@@ -1377,7 +1337,7 @@ Chat Examples:
 
   :reset     Clear conversation history (aliases: reset, clear-history)
   :files     List files created this session (aliases: :ls, ls)
-  :cancel    Kill currently running tool/process
+  :paste     Multi-line paste mode - Type :paste, paste content, type END to finish
   :reference Show CTF quick reference (aliases: :ctf, :cheatsheet)
   :help      Show this help message (aliases: help, -h, --help)
   quit       Exit the agent (aliases: exit, q)
@@ -1464,7 +1424,20 @@ The AI will automatically choose and execute tools based on your requests.
             try:
                 raw = input(prompt_string())
             except (KeyboardInterrupt, EOFError):
-                print("\nInterrupted. Type :reset to clear history or continue.")
+                print(color("\n⚠  Interrupted. Clearing input buffer...", C.YELLOW))
+                # Clear any remaining input in the buffer
+                try:
+                    import sys
+                    if sys.platform != "win32":
+                        import termios
+                        termios.tcflush(sys.stdin, termios.TCIFLUSH)
+                    else:
+                        import msvcrt
+                        while msvcrt.kbhit():
+                            msvcrt.getch()
+                except Exception:
+                    pass
+                print(color("⚡ Input cleared. Ready for next command.", C.YELLOW))
                 continue
 
             if not raw:
@@ -1490,13 +1463,36 @@ The AI will automatically choose and execute tools based on your requests.
                 print(color(agent.tool_executor.get_session_files(), C.CYAN))
                 continue
 
-            if raw_strip.lower() == ":cancel":
-                if agent.tool_executor.cancel_current_tool():
-                    print(color("⚡ Tool cancelled", C.YELLOW))
-                else:
-                    print(color("⚠ No running tool", C.YELLOW))
-                continue
-
+            # Multi-line paste mode
+            # Multi-line paste mode
+            if raw_strip.lower() in (":paste", "paste"):
+                print(color("📋 Multi-line paste mode activated.", C.CYAN))
+                print(color("   Paste your content below, then type 'END' on a new line to finish.", C.BRIGHT_BLACK))
+                print(color("   All newlines will be converted to spaces.\n", C.BRIGHT_BLACK))
+                lines = []
+                try:
+                    while True:
+                        line = input()
+                        if line.strip().upper() == "END":
+                            break
+                        lines.append(line)
+                except (KeyboardInterrupt, EOFError):
+                    print(color("\n⚠  Paste cancelled.", C.YELLOW))
+                    continue
+                
+                if not lines:
+                    print(color("⚠  No content pasted.", C.YELLOW))
+                    continue
+                
+                # Join all lines with spaces, removing newlines
+                raw = " ".join(lines)
+                print(color(f"\n✓ Captured {len(lines)} lines as single message.", C.GREEN))
+                
+                # Skip inline flag parsing for pasted content - send directly to agent
+                agent.chat(raw, auto_execute=default_auto_exec, inline_model=None, 
+                        max_steps=default_max_steps)
+                save_history()
+                continue  # Skip the normal message processing pipeline
             if raw_strip.lower() in ("quit", "exit", "q"):
                 print(f"\nSession summary:")
                 print(f"  API requests: {agent.total_api_requests}")
@@ -1507,6 +1503,12 @@ The AI will automatically choose and execute tools based on your requests.
                 raw, default_auto_exec, default_max_steps
             )
 
+            # Validate message is not empty after flag parsing
+            if not message.strip():
+                print(color("⚠  Empty message. Please provide a command or question.", C.YELLOW))
+                continue
+
+            # Validate model if provided
             inline_model = None
             if inline_model_raw:
                 low = inline_model_raw.lower()
@@ -1515,7 +1517,13 @@ The AI will automatically choose and execute tools based on your requests.
                 elif inline_model_raw in (CLAUDE_MODELS if api_provider == "claude" else OPENAI_MODELS):
                     inline_model = inline_model_raw
                 else:
-                    print(color(f"⚠ Unknown model '{inline_model_raw}'", C.YELLOW))
+                    print(color(f"⚠  Unknown model '{inline_model_raw}'. Valid options: light, medium, heavy", C.YELLOW))
+                    continue
+
+            # Validate max_steps range
+            if max_steps < 1:
+                print(color(f"⚠  Invalid max-steps '{max_steps}'. Must be at least 1. Using default: {DEFAULT_MAX_STEPS}", C.YELLOW))
+                max_steps = DEFAULT_MAX_STEPS
 
             agent.chat(message, auto_execute=auto_exec, inline_model=inline_model, 
                       max_steps=max_steps)
@@ -1524,6 +1532,6 @@ The AI will automatically choose and execute tools based on your requests.
     finally:
         save_history()
 
+
 if __name__ == "__main__":
-    main()
-            
+    main()      
