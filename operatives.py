@@ -115,6 +115,8 @@ CLAUDE_SONNET = "claude-sonnet-4-5-20250929"
 CLAUDE_HAIKU = "claude-3-5-haiku-20241022"
 
 # OpenAI Models
+GPT4O = "gpt-4o"
+GPT4O_MINI = "gpt-4o-mini"
 GPT4_TURBO = "gpt-4-turbo-preview"
 GPT4 = "gpt-4"
 GPT35_TURBO = "gpt-3.5-turbo"
@@ -126,9 +128,11 @@ CLAUDE_MODELS = {
 }
 
 OPENAI_MODELS = {
-    GPT4_TURBO: "GPT-4 Turbo (Heavy)",
-    GPT4: "GPT-4 (Medium)",
+    GPT4O: "GPT-4o (Heavy)",
+    GPT4O_MINI: "GPT-4o Mini (Medium)",
     GPT35_TURBO: "GPT-3.5 Turbo (Light)",
+    GPT4_TURBO: "GPT-4 Turbo (Legacy)",
+    GPT4: "GPT-4 (Legacy)",
 }
 
 # Unified aliases
@@ -142,10 +146,14 @@ MODEL_ALIASES = {
     "opus": CLAUDE_OPUS,
     # OpenAI
     "gpt-light": GPT35_TURBO,
-    "gpt-medium": GPT4,
-    "gpt-heavy": GPT4_TURBO,
+    "gpt-medium": GPT4O_MINI,
+    "gpt-heavy": GPT4O,
     "gpt3": GPT35_TURBO,
     "gpt4": GPT4,
+    "gpt-4o": GPT4O,
+    "gpt4o": GPT4O,
+    "gpt4o-mini": GPT4O_MINI,
+    "gpt-4o-mini": GPT4O_MINI,
     "gpt4-turbo": GPT4_TURBO,
     # Generic
     "light": None,  # Will be set based on provider
@@ -225,7 +233,7 @@ def wrap_prompt_ansi(text: str) -> str:
     """Wrap ANSI escapes so readline counts prompt width correctly."""
     if not readline or not ENABLE_COLOR:
         return text
-    return ANSI_ESCAPE_RE.sub(lambda match: f"{match.group(0)}", text)
+    return ANSI_ESCAPE_RE.sub(lambda match: f"\001{match.group(0)}\002", text)
 
 
 def summarize_text(value: str, max_preview: int = 60) -> Tuple[str, bool]:
@@ -819,8 +827,8 @@ class OpenAIAgent(BaseAgent):
         super().__init__("openai", max_history, debug)
         self.client = openai.OpenAI(api_key=api_key)
         self.model_light = GPT35_TURBO
-        self.model_medium = GPT4
-        self.model_heavy = GPT4_TURBO
+        self.model_medium = GPT4O_MINI
+        self.model_heavy = GPT4O
 
     def define_tools_schema(self):
         return [
@@ -945,11 +953,16 @@ class OpenAIAgent(BaseAgent):
     
     def get_model_display_name(self, model: str) -> str:
         """Get short display name for model"""
-        if "gpt-4-turbo" in model.lower():
+        model_lower = model.lower()
+        if "gpt-4o-mini" in model_lower:
+            return "gpt-4o mini"
+        elif "gpt-4o" in model_lower:
+            return "gpt-4o"
+        elif "gpt-4-turbo" in model_lower:
             return "gpt-4 turbo"
-        elif "gpt-4" in model.lower():
+        elif "gpt-4" in model_lower:
             return "gpt-4"
-        elif "gpt-3.5" in model.lower():
+        elif "gpt-3.5" in model_lower:
             return "gpt-3.5"
         return model  # fallback to full name
 
@@ -1163,8 +1176,8 @@ def print_banner(api_provider: str, default_auto_exec: bool, default_max_steps: 
         ]
     else:
         models = [
-            ("GPT-4 Turbo", "(Heavy)"),
-            ("GPT-4", "(Medium)"),
+            ("GPT-4o", "(Heavy)"),
+            ("GPT-4o Mini", "(Medium)"),
             ("GPT-3.5 Turbo", "(Light)"),
         ]
 
@@ -1183,7 +1196,14 @@ def print_banner(api_provider: str, default_auto_exec: bool, default_max_steps: 
     print(f"  Type natural language commands to interact with the agent")
     print(f"  Use {color('python3 operatives.py -h', C.YELLOW)} for detailed help")
     print(f"  In-session: type {color(':help', C.CYAN)} or {color('--help', C.CYAN)} to see inline flags and examples")
-    print(f"  Commands: {color(':reset', C.CYAN)} (clear) | {color(':files', C.CYAN)} (list files) | {color(':cancel', C.CYAN)} (kill) | {color('quit', C.CYAN)} (exit)")
+    print(
+        f"  Commands: {color(':reset', C.CYAN)} (reset/clear-history) | "
+        f"{color(':files', C.CYAN)} (:ls/ls) | "
+        f"{color(':reference', C.CYAN)} (:ctf/:cheatsheet) | "
+        f"{color(':help', C.CYAN)} (help/-h/--help) | "
+        f"{color(':cancel', C.CYAN)} | "
+        f"{color('quit', C.CYAN)} (exit/q)"
+    )
     print()
 
 def setup_readline():
@@ -1205,17 +1225,13 @@ def save_history():
 
 def prompt_string() -> str:
     whoami = getpass.getuser()
-    glyph = "👾 " if USE_FANCY_PROMPT else ""
+    use_color_prompt = ENABLE_COLOR and readline is not None
+    glyph = "?? " if USE_FANCY_PROMPT and use_color_prompt else ""
     label = f"{glyph}Operator"
-    if ENABLE_COLOR:
+    if use_color_prompt:
         prompt = color(label, C.CYAN + C.BOLD) + color(f" [{whoami}]", C.MUTED_BLUE) + color(": ", C.RESET)
         return wrap_prompt_ansi(prompt)
     return f"{label} [{whoami}]: "
-
-
-
-
-
 
 # ---------- Thinking Animation ----------
 class ThinkingAnimation:
@@ -1274,7 +1290,7 @@ def print_session_help():
     print(color("\n🔧 INLINE FLAGS", C.YELLOW + C.BOLD))
     print(color("  Use these in your messages to override settings:\n", C.BRIGHT_BLACK))
     print(color("  --model=MODEL", C.GREEN) + "           Force specific model")
-    print(color("                          ", C.BRIGHT_BLACK) + "Examples: light, medium, heavy, gpt4, sonnet, opus")
+    print(color("                          ", C.BRIGHT_BLACK) + "Examples: light, medium, heavy, gpt4o, gpt4, sonnet")
     print(color("\n  --auto-execute=BOOL", C.GREEN) + "     Override auto-execute for this message")
     print(color("                          ", C.BRIGHT_BLACK) + "Values: true, false")
     print(color("\n  --max-steps=N", C.GREEN) + "           Limit conversation steps")
@@ -1287,12 +1303,12 @@ def print_session_help():
     print(color("  Quick recon --model=gpt3", C.BRIGHT_BLACK))
     
     print(color("\n⌨  SESSION COMMANDS", C.BLUE + C.BOLD))
-    print(color("  :reset  ", C.CYAN) + "  Clear conversation history (fresh context)")
-    print(color("  :files  ", C.CYAN) + "  List files created in this session")
+    print(color("  :reset  ", C.CYAN) + "  Clear conversation history (aliases: reset, clear-history)")
+    print(color("  :files  ", C.CYAN) + "  List files created this session (aliases: :ls, ls)")
     print(color("  :cancel ", C.CYAN) + "  Kill currently running tool/process")
-    print(color("  :reference", C.CYAN) + "  Show CTF quick reference")
-    print(color("  :help   ", C.CYAN) + "  Show this help message")
-    print(color("  quit    ", C.CYAN) + "  Exit the agent")
+    print(color("  :reference", C.CYAN) + "  Show CTF quick reference (aliases: :ctf, :cheatsheet)")
+    print(color("  :help   ", C.CYAN) + "  Show this help message (aliases: help, -h, --help)")
+    print(color("  quit    ", C.CYAN) + "  Exit the agent (aliases: exit, q)")
     
     print(color("\n🛠  AVAILABLE TOOLS", C.RED + C.BOLD))
     print(color("  • execute_command     ", C.YELLOW) + "Run shell commands")
@@ -1337,7 +1353,7 @@ def main():
 Use these flags in your messages to override settings per-request:
 
   --model=MODEL           Force specific model
-                          Examples: light, medium, heavy, gpt4, sonnet, opus
+                          Examples: light, medium, heavy, gpt4o, gpt4, sonnet
   
   --auto-execute=BOOL     Override auto-execute for this message
                           Values: true, false
@@ -1359,9 +1375,12 @@ Chat Examples:
                           ⌨  SESSION COMMANDS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  :reset     Clear conversation history (fresh context)
+  :reset     Clear conversation history (aliases: reset, clear-history)
+  :files     List files created this session (aliases: :ls, ls)
   :cancel    Kill currently running tool/process
-  quit       Exit the agent
+  :reference Show CTF quick reference (aliases: :ctf, :cheatsheet)
+  :help      Show this help message (aliases: help, -h, --help)
+  quit       Exit the agent (aliases: exit, q)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                         🔑 ENVIRONMENT VARIABLES
@@ -1434,8 +1453,8 @@ The AI will automatically choose and execute tools based on your requests.
         
         # Set generic aliases to OpenAI models
         MODEL_ALIASES["light"] = GPT35_TURBO
-        MODEL_ALIASES["medium"] = GPT4
-        MODEL_ALIASES["heavy"] = GPT4_TURBO
+        MODEL_ALIASES["medium"] = GPT4O_MINI
+        MODEL_ALIASES["heavy"] = GPT4O
 
     setup_readline()
     print_banner(api_provider, default_auto_exec, default_max_steps)
