@@ -229,3 +229,4 @@ sudo apt install -y nmap binutils
 -  AI isn’t perfect: It can make mistakes or “hallucinate” answers. Always double-check what it suggests.
 -  Not a replacement for skill: This tool is here to help you, not play the game for you. It can speed up your work, handle boring tasks, and give you ideas — but real CTF skills still come from you.
 -  Mixed results: It does great with simple challenges like forensics, crypto, and basic web tasks. But for harder ones (like pwn or reversing), you’ll still need to dig in yourself.
+-  Beware of hosted services like web that may block Ai from accessing usually in robots.txt. In some case can be bypass by using a proper header and cookie 
