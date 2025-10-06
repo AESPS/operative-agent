@@ -14,7 +14,7 @@
 
 ---
 
-[![Watch the video](assets/thumbnail.png)](assets/operative.mp4)
+[![Watch the video](assets/thumbnail.png)](./assets/operative.mp4)
 
 ---
 ## 🚀 Installation
