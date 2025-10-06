@@ -39,10 +39,9 @@ python3 -m venv venv && source venv/bin/activate
 pip install anthropic openai
 pip install -r requirements.txt
 ```
-
 ### Configure access keys (choose your method)
 
-### [Method 1] Session-only injection
+#### [Method 1] Session-only injection
 ```bash
 export ANTHROPIC_API_KEY="..."  # Claude access
 export OPENAI_API_KEY="..."     # GPT access
