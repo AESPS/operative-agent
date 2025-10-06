@@ -21,7 +21,7 @@
 
 ```bash
 # Clone the arsenal
-git clone https://github.com/AESPS/operative.git && cd operative
+git clone https://github.com/AESPS/operative-agent.git && cd operative
 
 # Initialize environment
 python3 -m venv venv && source venv/bin/activate
