@@ -93,6 +93,7 @@ python3 operatives.py --max-steps=25      # Extended operation limit
 
 ### Runtime Overrides (Hot-Swap During Session)
 ```bash
+Ia cani tu kalau heavy model nya capat makan token. Mahal tia jadi nya. Save duit pakai --mode=light sja awo
 [>] Scan target --model=heavy              # Maximum firepower
 [>] Scan target --model=claude             # Force Claude backend
 [>] Scan target --model=openai             # Force GPT backend
