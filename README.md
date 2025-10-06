@@ -14,7 +14,7 @@
 
 ---
 
-[![Watch the video](assets/thumbnail.png)](https://player.vimeo.com/video/1124735847)
+[[![Watch the video](assets/thumbnail.png)](https://player.vimeo.com/video/1124735847)](https://github.com/AESPS/operative-agent/issues/1#issue-3485864614)
 
 ---
 ## 🚀 Installation
