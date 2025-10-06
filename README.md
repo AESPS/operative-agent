@@ -56,7 +56,6 @@ source ~/.zshrc
 ```bash
 python3 operatives.py
 ```
-```
 
 ---
 
