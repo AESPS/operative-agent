@@ -21,54 +21,14 @@
 
 ## 📋 Features
 
-<div align="center">
-
-<table style="margin:auto; max-width:900px;">
-<tr>
-<td style="vertical-align:top; padding:12px; width:50%;">
-<strong>🐧 Built for Kali / Labs</strong><br>
-Optimized for CTFs — use only in isolated lab environments you control.
-</td>
-<td style="vertical-align:top; padding:12px; width:50%;">
-<strong>🤖 Multi-Model Support</strong><br>
-Switch between Anthropic Claude and OpenAI models with smart defaults.
-</td>
-</tr>
-<tr>
-<td style="vertical-align:top; padding:12px;">
-<strong>🛠️ Built-in Tools</strong><br>
-nmap, strings, ffuf, binwalk, exiftool, stegseek, enc/dec, file ops.
-</td>
-<td style="vertical-align:top; padding:12px;">
-<strong>💾 Smart File Management</strong><br>
-Auto-save artifacts to `/tmp/` and keep a session index for easy cleanup.
-</td>
-</tr>
-<tr>
-<td style="vertical-align:top; padding:12px;">
-<strong>🎯 CTF-First</strong><br>
-Flag detection, binary checks, shellcode helpers, and CTF convenience features.
-</td>
-<td style="vertical-align:top; padding:12px;">
-<strong>⚡ Flexible Execution</strong><br>
-Auto-execute or require confirmation; per-message overrides for fine control.
-</td>
-</tr>
-<tr>
-<td style="vertical-align:top; padding:12px;">
-<strong>🔧 Inline Flags</strong><br>
-Override model, auto-execute, max-steps inline when issuing commands.
-</td>
-<td style="vertical-align:top; padding:12px;">
-<strong>📁 Session Tracking</strong><br>
-List and manage files created during the session.
-</td>
-</tr>
-</table>
-
-</div>
-
-> 💸 **Heads up:** API usage costs real money — use light models for quick scans. 😅
+- 🐧 **Lab-only / Kali friendly** — CTF-first tooling; run in isolated labs or VMs you own.
+- 🤖 **Multi-model** — Claude ↔ OpenAI switching with sensible defaults.
+- 🧰 **Tools included** — nmap · ffuf · binwalk · exiftool · stegseek · strings · http clients · more.
+- 📂 **Auto artifact save** — decoded/extracted results auto-saved to `/tmp/` (session indexed).
+- 🎯 **CTF helpers** — flag heuristics, binary checks, shellcode inspection helpers.
+- ⚙️ **Execution control** — automatic or manual confirmation; inline flag overrides per command.
+- 📦 **Session file tracking** — list, read, and purge session artifacts.
+- 💸 **Cost note** — APIs cost money; recommend using light/medium models for routine tasks. Nasi katok not included. 😂
 
 
 ---
