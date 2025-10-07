@@ -30,7 +30,7 @@
 - 🎯 **CTF Core Memory** — Knows flags, binaries, and shellcode. It's been around the block fr.  
 - ⚙️ **Execution Control** — Go full auto or manual approve when you're feeling extra cautious (we respect your boundaries fr fr).  
 - 📦 **Session Recall** — Keeps track of your messy lab so you don't lose your loot no cap og.  
-- 💸 **Reality Check** — APIs cost money 💀 RIP $5 credits — that's five nasi katok meals gone 😭 (the pain is real bestie)  
+- 💸 **Reality Check** — APIs cost money 💀 RIP $5 credits — that's five nasi katok meals gone 😭 
 
 ---
 
