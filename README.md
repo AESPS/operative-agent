@@ -51,8 +51,6 @@ https://github.com/user-attachments/assets/f3b18c96-5f24-4a58-a6ef-a39aba65f633
 > **Operative** tackling a real malware CTF challenge in ~2 minutes (shown at 4× speed).  
 > Because waiting is for patch Tuesday. Pretty efficient ngl. 💯
 
----
-
 ## 🚀 Installation
 
 ### 🧩 Prerequisites
