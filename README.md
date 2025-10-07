@@ -163,28 +163,28 @@ python3 operatives.py --max-steps=25
 ### 📁 File Operations (Organization Aura 💯)
 | Tool | Description | Key Features |
 |------|-------------|--------------|
-| `read_file` | Reads files (no snooping judgement here) | Text/hex/binary modes |
+| `read_file` | Reads files | Text/hex/binary modes |
 | `write_file` | Saves outputs (auto-tracked in `/tmp/` fr fr) | Session management on point |
-| `list_directory` | Lists dirs (showing you the goods) | Recursive, hidden files |
-| `search_files` | Regex file search (finding needles like a boss) | Ripgrep integration |
-| `extract_archive` | Extracts archives (unboxing moment bestie) | zip/tar/gz support |
+| `list_directory` | Lists dirs | Recursive, hidden files |
+| `search_files` | Regex file search | Ripgrep integration |
+| `extract_archive` | Extracts archives | zip/tar/gz support |
 
 ### 🔬 Binary Analysis (Big Brain Territory)
 | Tool | Description | Key Features |
 |------|-------------|--------------|
-| `strings_extract` | Pulls strings (extracting the tea) | Configurable min length |
-| `hexdump_file` | Hex view (matrix mode activated) | Adjustable width |
-| `file_info` | File metadata (getting to know your files) | Size, perms, MIME |
-| `checksec_analyze` | Binary security check (respectfully auditing) | PIE, RELRO, NX, Canary |
-| `binwalk_scan` | Firmware analysis (going deep fr) | Auto-extraction |
+| `strings_extract` | Pulls strings | Configurable min length |
+| `hexdump_file` | Hex view | Adjustable width |
+| `file_info` | File metadata | Size, perms, MIME |
+| `checksec_analyze` | Binary security check | PIE, RELRO, NX, Canary |
+| `binwalk_scan` | Firmware analysis | Auto-extraction |
 
 ### 🎭 Forensics & Crypto (Detective Aura Farming)
 | Tool | Description | Key Features |
 |------|-------------|--------------|
-| `exiftool_scan` | Metadata scan (finding hidden secrets) | Images, docs, media |
-| `stegseek_crack` | Stego cracker (password guesser extraordinaire) | Wordlist-based attack |
-| `decode_base64` | Base64 decoder (unscrambling the codes) | UTF-8/hex detection |
-| `compute_hash` | Hash calculator (crypto math bestie) | MD5/SHA variants |
+| `exiftool_scan` | Metadata scan | Images, docs, media |
+| `stegseek_crack` | Stego cracker | Wordlist-based attack |
+| `decode_base64` | Base64 decoder | UTF-8/hex detection |
+| `compute_hash` | Hash calculator | MD5/SHA variants |
 
 ### ⚙️ System (Under the Hood Vibes)
 | Tool | Description | Key Features |
@@ -207,16 +207,16 @@ python3 operatives.py --max-steps=25
   PORT     STATE SERVICE
   22/tcp   open  ssh      (respectfully found)
   80/tcp   open  http     (web server vibes)
-  443/tcp  open  https    (secure bestie approved)
+  443/tcp  open  https    (secure og approved)
 ```
 
 ### Example 2: Binary Analysis (Deep Dive Mode)
 ```bash
 👾 Operator [root]: Analyze /tmp/suspicious.bin
 
-🤖 Claude [sonnet 4.5]: I'll examine this binary systematically bestie.
-  1. Check file type and metadata (getting to know it first)
-  2. Extract readable strings (finding the hidden messages fr)
+🤖 Claude [sonnet 4.5]: I'll examine this binary systematically.
+  1. Check file type and metadata
+  2. Extract readable strings
   3. Look for embedded data (deep dive mode)
 
 🔧 Tool: [file_info] /tmp/suspicious.bin
@@ -226,10 +226,10 @@ python3 operatives.py --max-steps=25
 
 🔧 Tool: [checksec_analyze] /tmp/suspicious.bin
 ✅ Result:
-  RELRO:    Partial RELRO (mid protection fr)
-  Stack:    No canary found (vulnerable vibes detected)
-  NX:       NX enabled (respectable defense)
-  PIE:      No PIE (static addressing, interesting)
+  RELRO:    Partial RELRO
+  Stack:    No canary found
+  NX:       NX enabled
+  PIE:      No PIE
 ```
 
 ### Example 3: Web Fuzzing (Finding Hidden Paths 🔥)
