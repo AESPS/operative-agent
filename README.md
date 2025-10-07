@@ -449,9 +449,9 @@ Massive respect to:
 - Kali Linux team for the tooling ecosystem (built different since day one)
 
 ---
-## 🤝 Contributing (Come Aura Farm With Us)
+## 🤝 Contributing
 
-Contributions welcome! We're respectfully asking for help with:
+Contributions welcome!
 - Additional CTF tools integration (more tools = more aura)
 - Model provider support (Gemini, Mistral, etc.) (the more options the better fr)
 - Enhanced stealth/evasion techniques (big brain OPSEC moves)
