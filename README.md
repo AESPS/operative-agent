@@ -50,7 +50,7 @@ https://github.com/user-attachments/assets/f3b18c96-5f24-4a58-a6ef-a39aba65f633
 
 > **Operative** tackling a real malware CTF challenge in ~2 minutes (shown at 4× speed).  
 > Because waiting is for patch Tuesday. Pretty efficient ngl. 💯
-
+  
 ## 🚀 Installation
 
 ### 🧩 Prerequisites
@@ -377,25 +377,27 @@ This tool is designed for **authorized security testing and CTF competitions onl
 - ❌ Unauthorized access to systems (don't be that person fr)
 - ❌ Malicious activities (we don't condone chaos in the wild)
 
-## ⚠️ Note (Real Talk OG)
--  This AI-powered CTF agent can be really helpful in your cybersecurity journey, but keep these points in mind fr fr:
--  **AI isn't perfect**: It can make mistakes or "hallucinate" answers. Always double-check what it suggests (trust but verify bestie).
--  **Not a replacement for skill**: This tool is here to help you, not play the game for you. It can speed up your work, handle boring tasks, and give you ideas — but real CTF skills still come from you (you're the main character).
--  **Mixed results**: It does great with simple challenges like forensics, crypto, and basic web tasks. But for harder ones (like pwn or reversing), you'll still need to dig in yourself (no shortcuts to becoming goated).
--  **Beware of hosted services** like web that may block AI from accessing (usually in robots.txt). In some cases can be bypassed by using proper headers and cookies (respectfully navigating restrictions).
--  **Input Limitations**: When pasting multi-line content, each newline is treated as a separate command. For large data blocks, either remove newlines or save to a file first (or use `:paste` mode bestie).
+## ⚠️ Important Notes and 💭 Thoughts
 
-**You are responsible for your actions.** The authors assume no liability for misuse. Don't be catching cases out here fr. 🚨
+This AI-powered CTF agent is helpful, but understanding its limitations is crucial:
 
----
+### AI Limitations
+- **Not perfect**: AI can make mistakes or hallucinate answers. Always verify suggestions before trusting them.
+- **Assistant, not autopilot**: Speeds up workflow and handles repetitive tasks, but won't replace your CTF skills. You're still solving the challenge.
+- **Performance varies**: Excels at forensics, crypto, and basic web challenges. Struggles with complex pwn or reverse engineering that requires creative problem-solving.
+- **Misses obvious things**: Sometimes overlooks easy flags that humans spot instantly. Human oversight is essential.
 
-## 🙏 Acknowledgments (Shoutout to the Real Ones)
+### Technical Limitations
+- **Access restrictions**: Some services block automated tools (robots.txt). May require proper headers/cookies to bypass—respect site policies.
+- **Input handling**: Multi-line pastes are treated as separate commands. Use `:paste` mode or save to file for large data blocks.
 
-Massive respect to:
-- Anthropic for Claude AI (the big brain behind this)
-- OpenAI for GPT models (alternative vibes when needed)
-- The CTF community for inspiration (y'all keep us mogging)
-- Kali Linux team for the tooling ecosystem (built different since day one)
+### Model Performance
+- **Current best**: Claude Opus offers strongest reasoning for CTF tasks, but costs more. Worth it for difficult challenges.
+- **Future outlook**: Tool will improve as AI models advance. Current models have reasoning gaps that limit capabilities.
+- **No magic bullets**: Don't expect instant solutions. This is a sidekick that reduces tedious work, not a skill replacement.
+
+**Bottom line:** Work *with* the AI, verify outputs, and keep developing your skills. The tool handles grunt work so you can focus on actual problem-solving.
+
 
 If it saved you some brain cells, give it a ⭐ 😭
 
