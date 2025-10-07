@@ -1,5 +1,5 @@
 # 🎯 Operative Agentic AI
-
+ 
 <div align="center">
 
 ![Operative](./assets/operative_header.svg)
