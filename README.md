@@ -19,54 +19,57 @@
 
 ---
 
-## ✨ Features
+## 📋 Features
 
 <div align="center">
 
-<table>
+<table style="margin:auto; max-width:900px;">
 <tr>
-<td width="50%" align="center" valign="top">
-
-### 🤖 **Multi-Model AI**
-- Claude Opus/Sonnet/Haiku  
-- GPT-4/GPT-4o/GPT-3.5  
-- Smart model switching  
-- Cost optimization
-
+<td style="vertical-align:top; padding:12px; width:50%;">
+<strong>🐧 Built for Kali / Labs</strong><br>
+Optimized for CTFs — use only in isolated lab environments you control.
 </td>
-<td width="50%" align="center" valign="top">
-
-### 🛠️ **20+ Security Tools**
-- Network reconnaissance  
-- Binary analysis  
-- Web fuzzing  
-- Forensics & steganography
-
+<td style="vertical-align:top; padding:12px; width:50%;">
+<strong>🤖 Multi-Model Support</strong><br>
+Switch between Anthropic Claude and OpenAI models with smart defaults.
 </td>
 </tr>
 <tr>
-<td align="center" valign="top">
-
-### 🎯 **CTF Optimized**
-- Flag pattern detection  
-- Auto-save artifacts to `/tmp/`  
-- Session file tracking  
-- Multi-step reasoning
-
+<td style="vertical-align:top; padding:12px;">
+<strong>🛠️ Built-in Tools</strong><br>
+nmap, strings, ffuf, binwalk, exiftool, stegseek, enc/dec, file ops.
 </td>
-<td align="center" valign="top">
-
-### ⚡ **Flexible Control**
-- Auto-execute or manual approve  
-- Inline model switching  
-- Step limit controls  
-- History depth management
-
+<td style="vertical-align:top; padding:12px;">
+<strong>💾 Smart File Management</strong><br>
+Auto-save artifacts to `/tmp/` and keep a session index for easy cleanup.
+</td>
+</tr>
+<tr>
+<td style="vertical-align:top; padding:12px;">
+<strong>🎯 CTF-First</strong><br>
+Flag detection, binary checks, shellcode helpers, and CTF convenience features.
+</td>
+<td style="vertical-align:top; padding:12px;">
+<strong>⚡ Flexible Execution</strong><br>
+Auto-execute or require confirmation; per-message overrides for fine control.
+</td>
+</tr>
+<tr>
+<td style="vertical-align:top; padding:12px;">
+<strong>🔧 Inline Flags</strong><br>
+Override model, auto-execute, max-steps inline when issuing commands.
+</td>
+<td style="vertical-align:top; padding:12px;">
+<strong>📁 Session Tracking</strong><br>
+List and manage files created during the session.
 </td>
 </tr>
 </table>
 
 </div>
+
+> 💸 **Heads up:** API usage costs real money — use light models for quick scans. 😅
+
 
 ---
 
