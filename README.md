@@ -130,7 +130,7 @@ python3 operatives.py --max-steps=25
 
 | Tier | Claude | OpenAI | Performance | Cost |
 |------|--------|--------|-------------|------|
-| **Heavy** | Opus 4.1 | GPT-4 | 🔥 Big brain energy | $$ |
+| **Heavy** | Opus 4.1 | GPT-4o | 🔥 Big brain energy | $$ |
 | **Medium** | Sonnet 4.5 | GPT-4o Mini | 💪 Reliable middle ground | $ |
 | **Light** | Haiku 3.5 | GPT-3.5 Turbo | ⚡ Zoomies mode | $ |
 
