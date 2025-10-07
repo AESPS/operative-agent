@@ -399,8 +399,6 @@ Massive respect to:
 - The CTF community for inspiration (y'all keep us mogging)
 - Kali Linux team for the tooling ecosystem (built different since day one)
 
----
-
 If it saved you some brain cells, give it a ⭐ 😭
 
 No cap, this project is absolutely mogging the CTF automation game. Stay humble, stay hungry, keep grinding. 🔥
