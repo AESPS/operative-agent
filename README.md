@@ -367,11 +367,6 @@ END
 | `:reset` history often | ~50% | Between unrelated challenges (clean slate vibes) |
 | Limit `--max-steps` | Variable | Prevent runaway loops (when AI gets too excited) |
 
-**Example costs** (approximate - respectfully warning your wallet):
-- Light model: $0.50 per 1M input tokens (budget friendly fr)
-- Medium model: $2-5 per 1M input tokens (sweet spot bestie)
-- Heavy model: $15-30 per 1M input tokens (big brain tax 💀)
-
 ---
 
 ## ⚠️ Disclaimer (Legal Stuff, Respectfully)
@@ -405,29 +400,6 @@ Massive respect to:
 - Kali Linux team for the tooling ecosystem (built different since day one)
 
 ---
-## 🤝 Contributing
-
-Contributions welcome!
-- Additional CTF tools integration (more tools = more aura)
-- Model provider support (Gemini, Mistral, etc.) (the more options the better fr)
-- Enhanced stealth/evasion techniques (big brain OPSEC moves)
-- Web UI frontend (make it pretty for the people)
-
-Submit a PR bestie, let's build something that absolutely mogs the competition. 💯
-
----
-
-## 📜 License
-
-MIT License - See [LICENSE](LICENSE) for details
-
-Use it, mod it, share it. Just don't be that person who takes credit for other people's work fr. We see you. 👀
-
----
-
-<div align="center">
-
-**Built with 🔥 by Ong Gedek Gedek**
 
 If it saved you some brain cells, give it a ⭐ 😭
 
@@ -435,4 +407,3 @@ No cap, this project is absolutely mogging the CTF automation game. Stay humble,
 
 [⬆ Back to Top](#-operative-agentic-ai)
 
-</div>
