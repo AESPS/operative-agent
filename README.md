@@ -36,10 +36,10 @@
 
 ## 🤘 Quick Vibes: Why You'll Love It
 
-- Feels like having a hacker buddy that *actually listens* (rare find fr).  
-- Doesn't ask "did you try nmap yet?" — it just does it (saves you time).  
-- Never complains about your spaghetti payloads (judgment-free zone bestie).  
-- Built to handle chaos, caffeine, and CTF pressure all at once (we've all been there).  
+- Feels like having a hacker buddy that *actually listens* rare find fr.  
+- Doesn't ask "did you try nmap yet?" — it just does it.  
+- Never complains about your spaghetti payloads.  
+- Built to handle chaos, caffeine, and CTF pressure all at once.  
 - A genuinely helpful tool that makes the grind a bit easier. 🔥  
 
 ---
@@ -65,7 +65,7 @@ sudo apt update && sudo apt install -y \
 
 ### ⚡ Quick Start
 ```bash
-# Clone repo (bestie you got this)
+# Clone repo
 git clone https://github.com/AESPS/operative-agent.git
 cd operative-agent
 
@@ -99,13 +99,13 @@ source ~/.zshrc
 ### Basic Commands
 
 ```bash
-# Start with Claude (default bestie)
+# Start with Claude (default)
 python3 operatives.py
 
-# Start with OpenAI (different vibe fr)
+# Start with OpenAI (different vibe)
 python3 operatives.py --api=openai
 
-# Disable auto-execute (safety first bestie, we respect boundaries)
+# Disable auto-execute (safety first, we respect boundaries)
 python3 operatives.py --auto-execute=false
 
 # Increase context depth (big brain mode activated)
@@ -119,12 +119,12 @@ python3 operatives.py --max-steps=25
 
 | Command | Description | Aliases |
 |---------|-------------|---------|
-| `:reset` | Clear convo memory (fresh start fr) | `reset`, `clear-history` |
-| `:files` | List session artifacts (check your loot) | `:ls`, `ls` |
-| `:paste` | Multi-line paste mode (spam away bestie) | `paste` |
-| `:reference` | Show CTF cheatsheet (aura farm guide) | `:ctf`, `:cheatsheet` |
-| `:help` | Display help (no shame in asking) | `help`, `-h`, `--help` |
-| `quit` | Exit agent (catch you later) | `exit`, `q` |
+| `:reset` | Clear convo memory | `reset`, `clear-history` |
+| `:files` | List session artifacts | `:ls`, `ls` |
+| `:paste` | Multi-line paste mode | `paste` |
+| `:reference` | Show CTF cheatsheet | `:ctf`, `:cheatsheet` |
+| `:help` | Display help | `help`, `-h`, `--help` |
+| `quit` | Exit agent | `exit`, `q` |
 
 ---
 
@@ -132,12 +132,12 @@ python3 operatives.py --max-steps=25
 
 | Tier | Claude | OpenAI | Performance | Cost |
 |------|--------|--------|-------------|------|
-| **Heavy** | Opus 4.1 | GPT-4 | 🔥 Big brain energy (handles tough stuff) | $$ |
-| **Medium** | Sonnet 4.5 | GPT-4o Mini | 💪 Reliable middle ground (solid choice) | $ |
-| **Light** | Haiku 3.5 | GPT-3.5 Turbo | ⚡ Zoomies mode (speedrun vibes) | $ |
+| **Heavy** | Opus 4.1 | GPT-4 | 🔥 Big brain energy | $$ |
+| **Medium** | Sonnet 4.5 | GPT-4o Mini | 💪 Reliable middle ground | $ |
+| **Light** | Haiku 3.5 | GPT-3.5 Turbo | ⚡ Zoomies mode | $ |
 
 <details>
-<summary><b>📊 When to Use Each Tier (helpful guide bestie)</b></summary>
+<summary><b>📊 When to Use Each Tier</b></summary>
 
 **Heavy** — for hardcore reversing, exploit dev, or anything cursed fr fr. Best for the really tough challenges.  
 **Medium** — best daily driver: recon, crypto, web fuzzing, general CTF flow. Good balance of speed and smarts. 💯  
