@@ -155,10 +155,11 @@ Operator [root]: deep analysis --max-steps=50
 
 ---
 
-## 🛠️ Weaponized Toolset
+## 🛠️ Agent-Managed Toolset
+*(automatically invoked by Operative; users just describe what they need)*
 
 ### 🔍 **Reconnaissance**
-
+“Agent triggers these reconnaissance tools after you ask for a scan.”
 | Tool | Description | Key Features |
 |------|-------------|--------------|
 | `nmap_scan` | Network port scanning | Quick/full/version scans |
