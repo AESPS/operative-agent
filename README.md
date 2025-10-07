@@ -6,12 +6,14 @@
 
 **AI-Powered CTF & Security Analysis Agent**
 
-[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Anthropic](https://img.shields.io/badge/Anthropic-Claude-orange.svg)](https://www.anthropic.com/)
-[![OpenAI](https://img.shields.io/badge/OpenAI-GPT-purple.svg)](https://openai.com/)
+[![Anthropic Claude](https://img.shields.io/badge/Anthropic-Claude-orange.svg)](https://www.anthropic.com/)
+[![OpenAI GPT](https://img.shields.io/badge/OpenAI-GPT-purple.svg)](https://openai.com/)
 
 *Autonomous security testing agent with 20+ built-in CTF tools*
+
+[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Tools](#-weaponized-toolset) • [Examples](#-attack-chain-examples)
 
 </div>
 
@@ -19,48 +21,80 @@
 
 ## ✨ Features
 
+<div align="center">
+
+<table>
+<tr>
+<td width="50%" align="center" valign="top">
+
 ### 🤖 **Multi-Model AI**
-- Claude Opus/Sonnet/Haiku
-- GPT-4/GPT-4o/GPT-3.5
-- Smart model switching
+- Claude Opus/Sonnet/Haiku  
+- GPT-4/GPT-4o/GPT-3.5  
+- Smart model switching  
 - Cost optimization
 
+</td>
+<td width="50%" align="center" valign="top">
+
 ### 🛠️ **20+ Security Tools**
-- Network reconnaissance
+- Network reconnaissance  
 - Binary analysis  
-- Web fuzzing
+- Web fuzzing  
 - Forensics & steganography
 
+</td>
+</tr>
+<tr>
+<td align="center" valign="top">
+
 ### 🎯 **CTF Optimized**
-- Flag pattern detection
-- Auto-save artifacts to `/tmp/`
-- Session file tracking
+- Flag pattern detection  
+- Auto-save artifacts to `/tmp/`  
+- Session file tracking  
 - Multi-step reasoning
 
+</td>
+<td align="center" valign="top">
+
 ### ⚡ **Flexible Control**
-- Auto-execute or manual approve
-- Inline model switching
-- Step limit controls
+- Auto-execute or manual approve  
+- Inline model switching  
+- Step limit controls  
 - History depth management
+
+</td>
+</tr>
+</table>
+
+</div>
 
 ---
 
 ## 🎥 Demo
 
-<div align="center">
-<img src="https://github.com/user-attachments/assets/demo-placeholder.gif" alt="Operative Demo" width="80%">
+https://github.com/user-attachments/assets/f3b18c96-5f24-4a58-a6ef-a39aba65f633
 
 > **Operative** solving a real malware CTF challenge in ~2 minutes (shown at 4× speed)
-</div>
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Installation
 
+### Prerequisites
 ```bash
-# Clone & setup
+# Kali/ParrotOS/Ubuntu
+sudo apt update && sudo apt install -y \
+    python3 python3-pip nmap binutils \
+    exiftool binwalk stegseek ffuf whatweb
+```
+
+### Quick Start
+```bash
+# Clone repository
 git clone https://github.com/AESPS/operative-agent.git
 cd operative-agent
+
+# Setup environment
 python3 -m venv venv && source venv/bin/activate
 pip install anthropic openai requests
 
@@ -73,17 +107,8 @@ python3 operatives.py
 ```
 
 <details>
-<summary><b>📋 Full Installation Guide</b></summary>
+<summary><b>🔐 Persistent API Key Setup</b></summary>
 
-### Prerequisites
-```bash
-# Kali/ParrotOS/Ubuntu
-sudo apt update && sudo apt install -y \
-    python3 python3-pip nmap binutils \
-    exiftool binwalk stegseek ffuf whatweb
-```
-
-### Persistent API Key Setup
 ```bash
 # For Zsh
 echo 'export ANTHROPIC_API_KEY="sk-ant-api03-..."' >> ~/.zshrc
@@ -101,47 +126,55 @@ source ~/.bashrc
 
 ## 💻 Usage
 
-### Command Line Options
+### Basic Commands
+
 ```bash
 # Start with Claude (default)
 python3 operatives.py
 
-# Start with OpenAI  
+# Start with OpenAI
 python3 operatives.py --api=openai
 
 # Disable auto-execute (safe mode)
 python3 operatives.py --auto-execute=false
 
-# Custom settings
-python3 operatives.py --max-history=40 --max-steps=25
+# Increase context depth
+python3 operatives.py --max-history=40
+
+# Limit steps per query
+python3 operatives.py --max-steps=25
 ```
 
-### In-Session Commands
+### In-Session Controls
+
 | Command | Description | Aliases |
 |---------|-------------|---------|
 | `:reset` | Clear conversation history | `reset`, `clear-history` |
 | `:files` | List session artifacts | `:ls`, `ls` |
 | `:paste` | Multi-line paste mode | `paste` |
 | `:reference` | Show CTF cheatsheet | `:ctf`, `:cheatsheet` |
-| `:help` | Display help | `help`, `-h` |
+| `:help` | Display help | `help`, `-h`, `--help` |
 | `quit` | Exit agent | `exit`, `q` |
 
 ### Inline Flags
+
+Override settings per-message:
+
 ```bash
 # Model selection
-scan target --model=heavy
-quick recon --model=light
+Operator [root]: scan target --model=heavy
+Operator [root]: quick recon --model=light
 
-# Execution control
-download payload --auto-execute=false
+# Execution control  
+Operator [root]: download payload --auto-execute=false
 
 # Step limiting
-deep analysis --max-steps=50
+Operator [root]: deep analysis --max-steps=50
 ```
 
 ---
 
-## 🤖 Model Tiers
+## 🤖 Model Arsenal
 
 | Tier | Claude | OpenAI | Performance | Cost |
 |------|--------|--------|-------------|------|
@@ -149,94 +182,238 @@ deep analysis --max-steps=50
 | **Medium** | Sonnet 4.5 | GPT-4o Mini | 💪 Balanced | $$ |
 | **Light** | Haiku 3.5 | GPT-3.5 Turbo | ⚡ Fast responses | $ |
 
----
-
-## 🛠️ Available Tools
-
 <details>
-<summary><b>🔍 Reconnaissance</b></summary>
+<summary><b>📊 When to Use Each Tier</b></summary>
 
-- `nmap_scan` - Network port scanning
-- `whatweb_scan` - Web technology fingerprinting  
-- `ffuf_scan` - Content discovery fuzzing
-- `http_fetch` - HTTP client with session management
-</details>
-
-<details>
-<summary><b>📁 File Operations</b></summary>
-
-- `read_file` - File content reader (text/hex/binary)
-- `write_file` - Save to `/tmp/` with tracking
-- `list_directory` - Directory inspector
-- `search_files` - Regex file search
-- `extract_archive` - Archive extractor
-</details>
-
-<details>
-<summary><b>🔬 Binary Analysis</b></summary>
-
-- `strings_extract` - Extract readable strings
-- `hexdump_file` - Hex viewer
-- `file_info` - File metadata inspector
-- `checksec_analyze` - Binary security analysis
-- `binwalk_scan` - Firmware scanner
-</details>
-
-<details>
-<summary><b>🎭 Forensics & Crypto</b></summary>
-
-- `exiftool_scan` - Metadata extractor
-- `stegseek_crack` - Steganography cracker
-- `decode_base64` - Base64 decoder
-- `compute_hash` - Hash calculator (MD5/SHA)
+**Heavy** - Complex reverse engineering, exploit development, multi-step attacks  
+**Medium** - General CTF work, web recon, crypto challenges (recommended default)  
+**Light** - Quick scans, simple file operations, fast iteration
 </details>
 
 ---
 
-## 🎯 Example Sessions
+## 🛠️ Weaponized Toolset
 
-### Basic Recon
+### 🔍 **Reconnaissance**
+
+| Tool | Description | Key Features |
+|------|-------------|--------------|
+| `nmap_scan` | Network port scanning | Quick/full/version scans |
+| `whatweb_scan` | Web technology fingerprinting | Aggressive mode, plugin support |
+| `ffuf_scan` | Content discovery fuzzing | Custom wordlists, filter options |
+| `http_fetch` | HTTP client with session mgmt | Headers, cookies, JSON, params |
+
+### 📁 **File Operations**
+
+| Tool | Description | Key Features |
+|------|-------------|--------------|
+| `read_file` | File content reader | Text/hex/binary modes |
+| `write_file` | Save to `/tmp/` with tracking | Auto-tracked session files |
+| `list_directory` | Directory inspector | Recursive, hidden files |
+| `search_files` | Regex file search | Ripgrep integration, glob patterns |
+| `extract_archive` | Archive extractor | zip/tar/gz/gzip support |
+
+### 🔬 **Binary Analysis**
+
+| Tool | Description | Key Features |
+|------|-------------|--------------|
+| `strings_extract` | Extract readable strings | Configurable min length |
+| `hexdump_file` | Hex viewer | Adjustable width, byte limits |
+| `file_info` | File metadata inspector | Size, perms, MIME type |
+| `checksec_analyze` | Binary security analysis | PIE, RELRO, Canary, NX checks |
+| `binwalk_scan` | Firmware scanner | Auto-extraction option |
+
+### 🎭 **Forensics & Crypto**
+
+| Tool | Description | Key Features |
+|------|-------------|--------------|
+| `exiftool_scan` | Metadata extractor | Images, docs, media files |
+| `stegseek_crack` | Steganography cracker | Wordlist-based attacks |
+| `decode_base64` | Base64 decoder | Auto UTF-8/hex detection |
+| `compute_hash` | Hash calculator | MD5/SHA1/SHA256/SHA512 |
+
+### ⚙️ **System**
+
+| Tool | Description | Key Features |
+|------|-------------|--------------|
+| `execute_command` | Shell command runner | cwd/env/timeout support |
+| `list_session_files` | Session artifact viewer | Track all created files |
+
+---
+
+## 🎯 Attack Chain Examples
+
+### Example 1: Basic Recon
 ```bash
-👾 Operator: Scan 10.10.10.5 --model=light
-🤖 Claude: I'll perform a quick port scan on the target.
+👾 Operator [root]: Scan 10.10.10.5 --model=light
+
+🤖 Claude [haiku 3.5]: I'll perform a quick port scan on the target.
+
 🔧 Tool: [nmap_scan] 10.10.10.5 (quick)
-✅ Result: Ports 22, 80, 443 open
+✅ Result:
+  PORT     STATE SERVICE
+  22/tcp   open  ssh
+  80/tcp   open  http
+  443/tcp  open  https
+  
+👾 Operator [root]: Check what's running on port 80
+
+🤖 Claude [haiku 3.5]: I'll fingerprint the web server.
+
+🔧 Tool: [whatweb_scan] http://10.10.10.5
+✅ Result:
+  Apache[2.4.41], PHP[7.4.3], jQuery[3.5.1]
 ```
 
-### Binary Analysis
+### Example 2: Binary Analysis
 ```bash
-👾 Operator: Analyze /tmp/suspicious.bin
-🤖 Claude: I'll examine this binary systematically.
+👾 Operator [root]: Analyze /tmp/suspicious.bin
+
+🤖 Claude [sonnet 4.5]: I'll examine this binary systematically.
+  1. Check file type and metadata
+  2. Extract readable strings
+  3. Look for embedded data
+
+🔧 Tool: [file_info] /tmp/suspicious.bin
+✅ Result:
+  Size: 8432 bytes
+  ELF 64-bit LSB executable, x86-64
+
 🔧 Tool: [checksec_analyze] /tmp/suspicious.bin
-✅ Result: NX enabled, No PIE, flag{r3v3rs3_m3}
+✅ Result:
+  RELRO:    Partial RELRO
+  Stack:    No canary found
+  NX:       NX enabled
+  PIE:      No PIE
+
+🔧 Tool: [strings_extract] /tmp/suspicious.bin
+✅ Result:
+  /lib64/ld-linux-x86-64.so.2
+  flag{r3v3rs3_m3_1f_y0u_c4n}
+  admin_backdoor_enabled
 ```
 
-### Web Fuzzing
+### Example 3: Web Fuzzing
 ```bash
-👾 Operator: Fuzz http://target.com/FUZZ
+👾 Operator [root]: Fuzz http://target.com/FUZZ for hidden directories
+
+🤖 Claude [sonnet 4.5]: I'll use ffuf to discover hidden paths.
+
 🔧 Tool: [ffuf_scan] http://target.com/FUZZ
-✅ Result: Found /admin, /backup, /.git
+✅ Result:
+  admin                   [Status: 200, Size: 1234]
+  backup                  [Status: 200, Size: 567]
+  .git                    [Status: 301, Size: 89]
+
+👾 Operator [root]: Fetch http://target.com/.git/config with custom headers
+
+🔧 Tool: [http_fetch] http://target.com/.git/config
+✅ Result:
+  Status: 200
+  [core]
+    repositoryformatversion = 0
+    filemode = true
+    bare = false
+```
+
+### Example 4: Steganography
+```bash
+👾 Operator [root]: Check if there's hidden data in image.jpg
+
+🤖 Claude [sonnet 4.5]: I'll analyze the image metadata and attempt stego extraction.
+
+🔧 Tool: [exiftool_scan] image.jpg
+✅ Result:
+  File Type: JPEG
+  Comment: Something hidden here...
+
+🔧 Tool: [stegseek_crack] image.jpg
+✅ Result:
+  [i] Found passphrase: "password123"
+  Recovered data saved to: image.jpg.out
+
+🔧 Tool: [read_file] image.jpg.out (mode: text)
+✅ Result:
+  flag{st3g0_m4st3r_2024}
 ```
 
 ---
 
-## 💰 Cost Optimization
+## 🎨 Multi-Line Paste Mode
 
-| Strategy | Savings | When to Use |
-|----------|---------|-------------|
-| Use `--model=light` | ~90% | Quick scans, simple queries |
-| Use `--model=medium` | ~70% | General CTF work |
-| `:reset` history often | ~50% | Between challenges |
-| Limit `--max-steps` | Variable | Prevent runaway loops |
+For pasting code, payloads, or large data blocks:
+
+```bash
+Operator [root]: :paste
+📋 Multi-line paste mode activated.
+   Paste your content below, then type 'END' on a new line to finish.
+   All newlines will be converted to spaces.
+
+<paste your content here>
+END
+
+✓ Captured 47 lines as single message.
+```
+
+This prevents the terminal from treating each line as a separate command.
+
+---
+
+## 🔥 Advanced Features
+
+### 🧠 **Intelligent System Prompts**
+- Specialized CTF reasoning built-in
+- Auto-suggests next investigation steps
+- Prefers helper scripts over brittle one-liners
+
+### 🐍 **Auto Python Script Wrapping**
+Automatically converts fragile `python -c` commands into temporary scripts:
+```python
+# Before: python -c "long\nmultiline\ncode"  ❌ Breaks
+# After: python /tmp/operative_xxx.py  ✅ Works
+```
+
+### 🌐 **HTTP Session Management**
+- Persistent cookies across requests
+- Automatic redirect following
+- JSON/form data support
+- Response body auto-saving
+
+### 📦 **Smart Archive Handling**
+Auto-detects and extracts: `.zip`, `.tar`, `.tar.gz`, `.tgz`, `.gz`
+
+---
+
+## 🔒 Security & OPSEC
+
+> ⚠️ **WARNING**: This tool provides direct shell access. Only use in controlled lab environments.
+
+### Best Practices
+
+✅ **DO:**
+- Use in isolated VMs/containers
+- Disable auto-execute for unknown targets (`--auto-execute=false`)
+- Review tool calls before execution in high-risk scenarios
+- Keep conversation history short with `:reset` to save tokens
+
+❌ **DON'T:**
+- Use on production systems
+- Run with auto-execute on untrusted targets
+- Store API keys in scripts or repos
+- Share session files without sanitizing
+
+### Data Privacy
+- All file artifacts saved to `/tmp/operative_<session_id>_*`
+- Conversation history stored in `~/.operativeagent_history`
+- No data sent to external servers except API providers
 
 ---
 
 ## 🐛 Troubleshooting
 
 <details>
-<summary><b>Common Issues & Solutions</b></summary>
+<summary><b>❌ API Key Not Found</b></summary>
 
-### API Key Not Found
 ```bash
 # Verify keys are set
 echo $ANTHROPIC_API_KEY
@@ -246,30 +423,66 @@ echo $OPENAI_API_KEY
 export ANTHROPIC_API_KEY="sk-ant-..."
 export OPENAI_API_KEY="sk-..."
 ```
+</details>
 
-### Module Not Found
+<details>
+<summary><b>❌ Module Not Found</b></summary>
+
 ```bash
-# Ensure virtual environment is active
+# Ensure you're in the virtual environment
 source venv/bin/activate
 
 # Reinstall dependencies
 pip install anthropic openai requests
 ```
+</details>
 
-### Tool Not Available
+<details>
+<summary><b>❌ Tool Not Available</b></summary>
+
 ```bash
 # Install optional CTF tools
 sudo apt install -y exiftool binwalk stegseek ffuf whatweb
-```
 
-### Multi-Line Paste Issues
-Use `:paste` mode to handle multi-line input:
+# Or the agent will use Python fallbacks where possible
+```
+</details>
+
+<details>
+<summary><b>❌ Prompt Line Overlap</b></summary>
+
+Fixed in latest version. Update if you're seeing overlapping text on long inputs.
 ```bash
-Operator: :paste
+git pull origin main
+```
+</details>
+
+<details>
+<summary><b>⌨️ Multi-Line Paste Issues</b></summary>
+
+Use `:paste` mode to handle multi-line input properly:
+```bash
+Operator [root]: :paste
 <paste content>
 END
 ```
 </details>
+
+---
+
+## 💰 Cost Optimization
+
+| Strategy | Savings | When to Use |
+|----------|---------|-------------|
+| Use `--model=light` | ~90% | Quick scans, simple queries |
+| Use `--model=medium` | ~70% | General CTF work (recommended) |
+| `:reset` history often | ~50% | Between unrelated challenges |
+| Limit `--max-steps` | Variable | Prevent runaway loops |
+
+**Example costs** (approximate):
+- Light model: $0.50 per 1M input tokens
+- Medium model: $2-5 per 1M input tokens  
+- Heavy model: $15-30 per 1M input tokens
 
 ---
 
@@ -283,12 +496,18 @@ Contributions welcome! Areas of interest:
 
 ---
 
+## 📜 License
+
+MIT License - See [LICENSE](LICENSE) for details
+
+---
+
 ## ⚠️ Disclaimer
 
-This tool is designed for **authorized security testing and CTF competitions only**.
+This tool is designed for **authorized security testing and CTF competitions only**. 
 
 - ✅ Educational purposes in controlled environments
-- ✅ CTF competitions and wargames  
+- ✅ CTF competitions and wargames
 - ✅ Penetration testing with explicit permission
 - ❌ Unauthorized access to systems
 - ❌ Malicious activities
@@ -297,9 +516,12 @@ This tool is designed for **authorized security testing and CTF competitions onl
 
 ---
 
-## 📜 License
+## 🙏 Acknowledgments
 
-MIT License - See [LICENSE](LICENSE) for details
+- Anthropic for Claude AI
+- OpenAI for GPT models
+- The CTF community for inspiration
+- Kali Linux team for the tooling ecosystem
 
 ---
 
