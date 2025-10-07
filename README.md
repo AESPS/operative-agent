@@ -33,7 +33,7 @@
 
 ---
 
-## 🌈 Quick Vibes: Why You’ll Love It
+## 🤘 Quick Vibes: Why You’ll Love It
 
 - Feels like having a hacker buddy that *actually listens.*  
 - Doesn’t ask “did you try nmap yet?” — it just does it.  
