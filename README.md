@@ -428,7 +428,7 @@ This tool is designed for **authorized security testing and CTF competitions onl
 - ❌ Unauthorized access to systems (don't be that person fr)
 - ❌ Malicious activities (we don't condone chaos in the wild)
 
-## ⚠️ Note (Real Talk From Your Bestie)
+## ⚠️ Note (Real Talk OG)
 -  This AI-powered CTF agent can be really helpful in your cybersecurity journey, but keep these points in mind fr fr:
 -  **AI isn't perfect**: It can make mistakes or "hallucinate" answers. Always double-check what it suggests (trust but verify bestie).
 -  **Not a replacement for skill**: This tool is here to help you, not play the game for you. It can speed up your work, handle boring tasks, and give you ideas — but real CTF skills still come from you (you're the main character).
