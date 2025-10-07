@@ -141,7 +141,7 @@ python3 operatives.py --max-steps=25
 
 **Heavy** — for hardcore reversing, exploit dev, or anything cursed fr fr. Best for the really tough challenges.  
 **Medium** — best daily driver: recon, crypto, web fuzzing, general CTF flow. Good balance of speed and smarts. 💯  
-**Light** — for when you're broke or speedrunning easy points (we've all been there bestie, no judgment).  
+**Light** — for when you're broke or speedrunning easy points.  
 </details>
 
 ---
@@ -150,15 +150,15 @@ python3 operatives.py --max-steps=25
 
 > Just describe what you need — the agent decides which tool to deploy.  
 > It's like having a helpful assistant who actually gets things done (no cap, pretty efficient).  
-> This toolset covers most CTF scenarios you'll run into. 🔥
+> This toolset covers handful CTF scenarios you'll run into. 🔥
 
 ### 🔍 Recon (Aura Farming Essentials)
 | Tool | Description | Key Features |
 |------|-------------|--------------|
-| `nmap_scan` | Network scanner (respectfully poking ports) | Quick/full/version scans |
-| `whatweb_scan` | Web tech fingerprinting (sniffing out the vibes) | Aggressive mode, plugin support |
-| `ffuf_scan` | Directory fuzzing (finding hidden treasures fr) | Wordlists, filters, stealth options |
-| `http_fetch` | HTTP client (making requests like a bestie) | Headers, cookies, JSON, params |
+| `nmap_scan` | Network scanner | Quick/full/version scans |
+| `whatweb_scan` | Web tech fingerprinting | Aggressive mode, plugin support |
+| `ffuf_scan` | Directory fuzzing | Wordlists, filters, stealth options |
+| `http_fetch` | HTTP client | Headers, cookies, JSON, params |
 
 ### 📁 File Operations (Organization Aura 💯)
 | Tool | Description | Key Features |
