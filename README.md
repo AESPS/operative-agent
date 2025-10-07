@@ -147,7 +147,7 @@ python3 operatives.py --max-steps=25
 ## 🛠️ Agent-Managed Toolset
 
 > Just describe what you need — the agent decides which tool to deploy.  
-> It’s like having an intern who actually gets things done.
+> It’s like having an personal bot who actually gets things done.
 
 ### 🔍 Recon
 | Tool | Description | Key Features |
