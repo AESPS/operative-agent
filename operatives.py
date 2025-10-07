@@ -27,7 +27,12 @@ import threading
 import unicodedata
 import tempfile
 import shlex
-from typing import Tuple, Optional, List, Dict, Any
+import shutil
+import gzip
+import binascii
+import fnmatch
+import stat
+from typing import Tuple, Optional, List, Dict, Any, Union
 
 # readline for nicer input and persistent history
 try:
@@ -52,7 +57,7 @@ except ImportError:
 
 # ---------- Config ----------
 DEFAULT_MAX_STEPS = 15
-MAX_HISTORY_ENTRIES = 6
+MAX_HISTORY_ENTRIES = 20
 HISTORY_FILE = os.path.expanduser("~/.operativeagent_history")
 FLAG_PREFIXES_FILE = os.path.join(os.path.dirname(__file__), "flag_prefixes.txt")
 
@@ -115,6 +120,7 @@ CLAUDE_SONNET = "claude-sonnet-4-5-20250929"
 CLAUDE_HAIKU = "claude-3-5-haiku-20241022"
 
 # OpenAI Models
+GPT4 = "gpt-4"
 GPT4O = "gpt-4o"
 GPT4O_MINI = "gpt-4o-mini"
 GPT35_TURBO = "gpt-3.5-turbo"
@@ -126,7 +132,8 @@ CLAUDE_MODELS = {
 }
 
 OPENAI_MODELS = {
-    GPT4O: "GPT-4o (Heavy)",
+    GPT4: "GPT-4 (Heavy)",
+    GPT4O: "GPT-4o (Alt Heavy)",
     GPT4O_MINI: "GPT-4o Mini (Medium)",
     GPT35_TURBO: "GPT-3.5 Turbo (Light)",
 }
@@ -138,6 +145,23 @@ MODEL_ALIASES = {
     "medium": None,
     "heavy": None,
 }
+
+OPENAI_SYSTEM_PROMPT = (
+    "You are Operative, an AI assistant built for security CTF workflows. "
+    "Always think out loud, sketch a short plan before acting, and iterate through tool usage. "
+    "Prefer writing helper scripts with write_file + python3 rather than long python -c commands. "
+    "When you encounter encoded malware or shellcode, try decoding, disassembling (using capstone if present), "
+    "and extracting embedded data. Suggest and attempt additional recon techniques when initial steps fail. "
+    "Never stop after the first hurdle—look for the next investigative angle."
+)
+
+CLAUDE_SYSTEM_PROMPT = (
+    "You are Operative, an AI agent for hands-on CTF and malware analysis. "
+    "Work through problems methodically, sharing a brief plan, using available tools, and creating helper scripts "
+    "when appropriate. Favor write_file + python3 scripts over brittle python -c commands. "
+    "For shellcode or binaries, attempt decoding, disassembly, and other reversing techniques (capstone, radare2, etc.) "
+    "before concluding. Keep pushing the investigation forward."
+)
 
 # ---------- Colors ----------
 class C:
@@ -283,7 +307,7 @@ def print_tool_result(preview_lines: List[str], result_color: str, full_path: Op
     def color_body(text: str) -> str:
         if "\033" in text:  # already colored (e.g., flag highlight)
             return text
-        return color(text, C.MAGENTA)
+        return color(text, result_color or C.MAGENTA)
 
     if single_line:
         body = color_body(preview_lines[0])
@@ -351,6 +375,7 @@ class ToolExecutor:
         self.session_files = {}  # Track files created during session
         self.session_id = hashlib.md5(str(time.time()).encode()).hexdigest()[:8]
         self.temp_dir = tempfile.gettempdir()
+        self._http_session = None  # Lazy-initialised requests session for cookie reuse
         
     def _sanitize_filename(self, requested: Optional[str], extension: str, timestamp: int) -> str:
         base_name = f"operative_{self.session_id}_{timestamp}"
@@ -363,15 +388,20 @@ class ToolExecutor:
         clean_extension = re.sub(r"[^A-Za-z0-9]", "", extension) or "txt"
         return f"{base_name}.{clean_extension}"
 
-    def save_to_tmp(self, content: str, filename: str = None, extension: str = "txt") -> str:
+    def save_to_tmp(self, content: Union[str, bytes, bytearray], filename: str = None, extension: str = "txt") -> str:
         """Save content to the temp directory and track it."""
         timestamp = int(time.time())
+        extension = (extension or "txt").lower()
         safe_name = self._sanitize_filename(filename, extension, timestamp)
         filepath = os.path.join(self.temp_dir, safe_name)
+        is_bytes_input = isinstance(content, (bytes, bytearray))
 
         try:
             os.makedirs(self.temp_dir, exist_ok=True)
-            if extension in ["bin", "exe", "elf"]:
+            if is_bytes_input:
+                with open(filepath, "wb") as f:
+                    f.write(bytes(content))
+            elif extension in ["bin", "exe", "elf"]:
                 try:
                     cleaned = content.replace(' ', '').replace('\n', '')
                     if cleaned and all(c in '0123456789abcdefABCDEF' for c in cleaned):
@@ -381,10 +411,10 @@ class ToolExecutor:
                     with open(filepath, "wb") as f:
                         f.write(binary_data)
                 except Exception:
-                    with open(filepath, "w") as f:
+                    with open(filepath, "w", encoding="utf-8", errors="ignore") as f:
                         f.write(content)
             else:
-                with open(filepath, "w") as f:
+                with open(filepath, "w", encoding="utf-8") as f:
                     f.write(content)
 
             if extension in ["sh", "py", "pl", "rb"]:
@@ -421,6 +451,280 @@ class ToolExecutor:
         context += "Use these paths when referencing files from earlier in the conversation.]\n"
         return context
 
+    def _command_exists(self, command: str) -> bool:
+        """Return True if the underlying system command is available."""
+        return shutil.which(command) is not None
+
+    def _maybe_wrap_python_command(self, cmd: Any, shell: bool) -> Tuple[Any, bool]:
+        """Convert fragile python -c invocations into temporary scripts when needed."""
+        if isinstance(cmd, (list, tuple)):
+            parts = [str(part) for part in cmd]
+            if len(parts) >= 3 and parts[0].lower().startswith("python") and parts[1] == "-c":
+                script_body = parts[2]
+                if script_body and ("\n" in script_body or "\r" in script_body):
+                    script_path = self.save_to_tmp(script_body, extension="py")
+                    if isinstance(script_path, str) and script_path.startswith("Error"):
+                        return cmd, shell
+                    new_parts = [parts[0], script_path] + parts[3:]
+                    return new_parts, False
+            return cmd, shell
+
+        if not isinstance(cmd, str):
+            return cmd, shell
+
+        pattern = re.compile(
+            r"(?P<intp>\bpython[^\s]*)\s+-c\s+(?P<quote>['\"])(?P<code>.*?)(?P=quote)(?:\s+(?P<args>.*))?$",
+            re.IGNORECASE | re.DOTALL,
+        )
+        match = pattern.search(cmd.strip())
+        if not match:
+            return cmd, shell
+
+        interpreter = match.group("intp")
+        code = match.group("code")
+        extras_str = match.group("args") or ""
+
+        if code and ("\n" in code or "\r" in code):
+            try:
+                extras = shlex.split(extras_str) if extras_str else []
+            except ValueError:
+                extras = extras_str.split() if extras_str else []
+            script_path = self.save_to_tmp(code, extension="py")
+            if isinstance(script_path, str) and script_path.startswith("Error"):
+                return cmd, shell
+            new_parts = [interpreter, script_path] + extras
+            return new_parts, False
+
+        return cmd, shell
+
+    def _guess_extension_for_mime(self, content_type: str) -> str:
+        """Heuristically derive a reasonable extension from a MIME type."""
+        if not content_type:
+            return "bin"
+        mime = content_type.split(";", 1)[0].strip().lower()
+        mapping = {
+            "text/html": "html",
+            "text/css": "css",
+            "text/javascript": "js",
+            "application/javascript": "js",
+            "application/json": "json",
+            "application/xml": "xml",
+            "text/xml": "xml",
+            "text/plain": "txt",
+            "text/markdown": "md",
+            "application/x-www-form-urlencoded": "txt",
+            "application/octet-stream": "bin",
+            "image/png": "png",
+            "image/jpeg": "jpg",
+            "image/gif": "gif",
+            "image/svg+xml": "svg",
+            "application/pdf": "pdf",
+            "application/zip": "zip",
+            "application/x-tar": "tar",
+            "application/x-gzip": "gz",
+        }
+        if mime.startswith("text/"):
+            return mapping.get(mime, "txt")
+        return mapping.get(mime, "bin")
+
+    def _is_text_mime(self, content_type: str) -> bool:
+        """Return True if MIME type is likely text-based."""
+        if not content_type:
+            return False
+        mime = content_type.split(";", 1)[0].strip().lower()
+        if mime.startswith("text/"):
+            return True
+        text_like_tokens = ("json", "xml", "javascript", "x-www-form-urlencoded", "+json", "+xml")
+        return any(token in mime for token in text_like_tokens)
+
+    def _http_fetch(self, url: str, method: str, headers: Dict[str, str], data: Optional[Any],
+                    timeout: int, follow_redirects: bool, insecure: bool,
+                    params: Optional[Dict[str, Any]] = None, json_body: Optional[Any] = None,
+                    save_body: bool = False) -> str:
+        if not url.lower().startswith(("http://", "https://")):
+            return f"Unsupported URL scheme for {url}. Only HTTP/HTTPS are allowed."
+
+        # Try requests first if available
+        try:
+            import requests  # type: ignore
+        except Exception:
+            requests = None  # type: ignore
+
+        if requests:
+            session = self._http_session
+            if session is None:
+                session = requests.Session()
+                session.headers.setdefault("User-Agent", "OperativeAgent/1.0")
+                self._http_session = session
+
+            request_kwargs: Dict[str, Any] = {
+                "method": method,
+                "url": url,
+                "headers": headers or None,
+                "timeout": timeout,
+                "allow_redirects": follow_redirects,
+                "verify": not insecure,
+            }
+            if params:
+                request_kwargs["params"] = params
+            if json_body is not None:
+                request_kwargs["json"] = json_body
+            elif data is not None:
+                request_kwargs["data"] = data
+
+            try:
+                response = session.request(**request_kwargs)
+            except Exception as exc:
+                return f"HTTP request error: {exc}"
+
+            lines = [f"Status: {response.status_code}"]
+            elapsed = getattr(response, "elapsed", None)
+            if elapsed:
+                lines.append(f"Elapsed: {elapsed.total_seconds():.3f}s")
+            else:
+                lines.append("Elapsed: n/a")
+            lines.append("Headers:")
+            for key, value in response.headers.items():
+                lines.append(f"  {key}: {value}")
+            if response.history:
+                lines.append("")
+                lines.append("Redirect chain:")
+                for hop in response.history:
+                    lines.append(f"  {hop.status_code} -> {hop.headers.get('Location', '')}")
+            cookies = response.cookies.get_dict()
+            if cookies:
+                lines.append("")
+                lines.append("Cookies:")
+                for name, value in cookies.items():
+                    lines.append(f"  {name}={value}")
+            lines.append("")
+
+            content_type = response.headers.get("Content-Type", "")
+            mime_extension = self._guess_extension_for_mime(content_type)
+            is_text = self._is_text_mime(content_type)
+            body_path: Optional[str] = None
+
+            if is_text:
+                try:
+                    encoding = response.encoding or "utf-8"
+                    text_body = response.content.decode(encoding, errors="replace")
+                except (LookupError, UnicodeDecodeError):
+                    text_body = response.text
+
+                if "json" in content_type.lower():
+                    try:
+                        parsed = response.json()
+                        text_body = json.dumps(parsed, indent=2, ensure_ascii=False)
+                    except Exception:
+                        pass
+
+                max_preview_chars = 4000
+                truncated = len(text_body) > max_preview_chars
+                preview = text_body[:max_preview_chars]
+                if truncated:
+                    preview += "..."
+                lines.append(preview if preview else "(empty body)")
+
+                if save_body or truncated:
+                    body_path = self.save_to_tmp(text_body, extension=mime_extension or "txt")
+            else:
+                binary = response.content
+                if binary:
+                    body_path = self.save_to_tmp(binary, extension=mime_extension or "bin")
+                    lines.append(f"[binary body saved: {len(binary)} bytes -> {body_path}]")
+                else:
+                    lines.append("(empty body)")
+
+            if body_path:
+                lines.append(f"\nFull body saved to: {body_path}")
+            return "\n".join(lines)
+
+        # Fallback to curl if present
+        final_url = url
+        if params:
+            try:
+                from urllib.parse import urlencode, urlsplit, urlunsplit, parse_qsl
+
+                parsed = urlsplit(url)
+                query_items = parse_qsl(parsed.query, keep_blank_values=True)
+                query_items.extend((str(k), str(v)) for k, v in params.items())
+                final_url = urlunsplit(
+                    (parsed.scheme, parsed.netloc, parsed.path, urlencode(query_items), parsed.fragment)
+                )
+            except Exception:
+                final_url = url
+
+        if self._command_exists("curl"):
+            cmd = ["curl", "-i", "--max-time", str(timeout)]
+            if follow_redirects:
+                cmd.append("-L")
+            if insecure:
+                cmd.append("-k")
+            for key, value in (headers or {}).items():
+                cmd.extend(["-H", f"{key}: {value}"])
+            if method and method.upper() != "GET":
+                cmd.extend(["-X", method.upper()])
+            if json_body is not None:
+                cmd.extend(["--data-binary", json.dumps(json_body)])
+            elif data is not None:
+                cmd.extend(["--data-binary", str(data)])
+            cmd.append(final_url)
+            return self.run_popen(cmd, shell=False, timeout=timeout + 5)
+
+        # Final fallback using urllib
+        try:
+            import urllib.request
+            import ssl
+
+            req = urllib.request.Request(final_url, method=method.upper())
+            for key, value in (headers or {}).items():
+                req.add_header(key, value)
+            context = None
+            if insecure and final_url.lower().startswith("https://"):
+                context = ssl._create_unverified_context()
+
+            if json_body is not None:
+                payload = json.dumps(json_body).encode("utf-8")
+            elif data is not None:
+                payload = str(data).encode("utf-8", errors="ignore")
+            else:
+                payload = None
+
+            with urllib.request.urlopen(req, data=payload, timeout=timeout, context=context) as resp:
+                raw = resp.read()
+                content_type = resp.headers.get_content_type()
+                is_text = self._is_text_mime(content_type)
+                lines = [
+                    f"Status: {resp.status}",
+                    "Headers:",
+                ]
+                for key, value in resp.headers.items():
+                    lines.append(f"  {key}: {value}")
+                lines.append("")
+                body_path: Optional[str] = None
+                if is_text:
+                    text_body = raw.decode("utf-8", errors="replace")
+                    max_preview_chars = 4000
+                    truncated = len(text_body) > max_preview_chars
+                    preview = text_body[:max_preview_chars]
+                    if truncated:
+                        preview += "..."
+                    lines.append(preview if preview else "(empty body)")
+                    if save_body or truncated:
+                        body_path = self.save_to_tmp(text_body, extension=self._guess_extension_for_mime(content_type))
+                else:
+                    if raw:
+                        body_path = self.save_to_tmp(raw, extension=self._guess_extension_for_mime(content_type))
+                        lines.append(f"[binary body saved: {len(raw)} bytes -> {body_path}]")
+                    else:
+                        lines.append("(empty body)")
+
+                if body_path:
+                    lines.append(f"\nFull body saved to: {body_path}")
+                return "\n".join(lines)
+        except Exception as exc:
+            return f"HTTP request error: {exc}"
+
     def _normalize_command(self, cmd: Any, shell: bool):
         """Normalise tool command inputs for Popen."""
         if isinstance(cmd, dict):
@@ -449,13 +753,24 @@ class ToolExecutor:
             return [str(part) for part in cmd]
         return cmd
 
-    def run_popen(self, cmd, shell=False, timeout=None):
+    def run_popen(self, cmd, shell=False, timeout=None, cwd=None, env=None):
         cmd = self._normalize_command(cmd, shell)
         if cmd is None or cmd == []:
             return "Tool error: empty command"
         try:
-            proc = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE, 
-                                   stderr=subprocess.PIPE, text=True)
+            merged_env = None
+            if env:
+                merged_env = os.environ.copy()
+                merged_env.update({str(k): str(v) for k, v in env.items()})
+            proc = subprocess.Popen(
+                cmd,
+                shell=shell,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                cwd=cwd or None,
+                env=merged_env
+            )
             self._current_proc = proc
             try:
                 out, err = proc.communicate(timeout=timeout)
@@ -491,7 +806,18 @@ class ToolExecutor:
         try:
             if tool_name == "execute_command":
                 cmd = tool_input.get("command", "")
-                return self.run_popen(cmd, shell=True, timeout=120)
+                shell_flag = tool_input.get("shell")
+                if shell_flag is None:
+                    shell_flag = True
+                cmd, shell_flag = self._maybe_wrap_python_command(cmd, shell_flag)
+                timeout = tool_input.get("timeout", 120)
+                try:
+                    timeout = int(timeout) if timeout is not None else None
+                except (TypeError, ValueError):
+                    timeout = 120
+                cwd = tool_input.get("cwd")
+                env = tool_input.get("env")
+                return self.run_popen(cmd, shell=shell_flag, timeout=timeout, cwd=cwd, env=env)
 
             if tool_name == "read_file":
                 filepath = tool_input["filepath"]
@@ -532,6 +858,55 @@ class ToolExecutor:
                 data = tool_input["data"].encode()
                 return getattr(hashlib, algo)(data).hexdigest()
 
+            if tool_name == "http_fetch":
+                url = tool_input["url"]
+                method = tool_input.get("method", "GET").upper()
+                headers = tool_input.get("headers") or {}
+                if isinstance(headers, list):
+                    # Convert list of "Key: Value" pairs into dict
+                    tmp = {}
+                    for item in headers:
+                        if isinstance(item, str) and ":" in item:
+                            key, value = item.split(":", 1)
+                            tmp[key.strip()] = value.strip()
+                    headers = tmp
+                elif not isinstance(headers, dict):
+                    headers = {}
+                data = tool_input.get("data")
+                params = tool_input.get("params")
+                if not isinstance(params, dict):
+                    params = None
+                elif params:
+                    params = {str(k): str(v) for k, v in params.items()}
+                json_body = tool_input.get("json")
+                if isinstance(json_body, str):
+                    try:
+                        json_body = json.loads(json_body)
+                    except json.JSONDecodeError:
+                        pass
+                save_body = bool(tool_input.get("save_body", False))
+                try:
+                    timeout = int(tool_input.get("timeout", 30))
+                except (TypeError, ValueError):
+                    timeout = 30
+                follow_redirects = bool(tool_input.get("follow_redirects", True))
+                insecure = bool(tool_input.get("insecure", False))
+                # Prefer JSON payload over raw data if both are set
+                if json_body is not None:
+                    data = None
+                return self._http_fetch(
+                    url,
+                    method,
+                    headers,
+                    data,
+                    timeout,
+                    follow_redirects,
+                    insecure,
+                    params=params,
+                    json_body=json_body,
+                    save_body=save_body,
+                )
+
             if tool_name == "nmap_scan":
                 target = tool_input["target"]
                 stype = tool_input["scan_type"]
@@ -549,17 +924,386 @@ class ToolExecutor:
                 cmd = ["strings", "-n", min_length, filepath]
                 return self.run_popen(cmd, shell=False, timeout=120)
 
+            if tool_name == "file_info":
+                filepath = tool_input["filepath"]
+                if not os.path.exists(filepath):
+                    return f"File not found: {filepath}"
+                try:
+                    stat_info = os.stat(filepath)
+                except PermissionError:
+                    return f"Permission denied: {filepath}"
+
+                details = [
+                    f"Size: {stat_info.st_size} bytes",
+                    f"Permissions: {oct(stat.S_IMODE(stat_info.st_mode))}",
+                    f"Owner UID: {stat_info.st_uid}, GID: {stat_info.st_gid}",
+                    f"Modified: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(stat_info.st_mtime))}",
+                ]
+
+                if self._command_exists("file"):
+                    file_out = self.run_popen(["file", "-i", filepath], shell=False, timeout=30).strip()
+                    if file_out:
+                        details.append(file_out)
+                else:
+                    details.append("`file` command not available on this system.")
+
+                return "\n".join(details)
+
+            if tool_name == "checksec_analyze":
+                filepath = tool_input["filepath"]
+                if not os.path.exists(filepath):
+                    return f"File not found: {filepath}"
+                if self._command_exists("checksec"):
+                    cmd = ["checksec", "--file", filepath]
+                elif self._command_exists("pwn"):
+                    cmd = ["pwn", "checksec", filepath]
+                else:
+                    return "Neither `checksec` nor `pwn checksec` is available on this system."
+                return self.run_popen(cmd, shell=False, timeout=60)
+
+            if tool_name == "binwalk_scan":
+                filepath = tool_input["filepath"]
+                if not os.path.exists(filepath):
+                    return f"File not found: {filepath}"
+                if not self._command_exists("binwalk"):
+                    return "`binwalk` is not installed."
+                flags_raw = tool_input.get("flags", "")
+                extract = bool(tool_input.get("extract", False))
+                cmd = ["binwalk", filepath]
+                if extract:
+                    cmd.insert(1, "-e")
+                if flags_raw:
+                    try:
+                        extra_flags = shlex.split(str(flags_raw))
+                        insert_at = 2 if extract else 1
+                        cmd[insert_at:insert_at] = extra_flags
+                    except ValueError as exc:
+                        return f"Invalid flags: {exc}"
+                result = self.run_popen(cmd, shell=False, timeout=600)
+                if extract:
+                    expected_dir = f"{filepath}.extracted"
+                    if os.path.isdir(expected_dir):
+                        result += f"\n\nExtracted files saved under: {expected_dir}"
+                return result
+
+            if tool_name == "exiftool_scan":
+                filepath = tool_input["filepath"]
+                if not os.path.exists(filepath):
+                    return f"File not found: {filepath}"
+                if not self._command_exists("exiftool"):
+                    return "`exiftool` is not installed."
+                return self.run_popen(["exiftool", filepath], shell=False, timeout=180)
+
+            if tool_name == "stegseek_crack":
+                filepath = tool_input["filepath"]
+                if not os.path.exists(filepath):
+                    return f"File not found: {filepath}"
+                if not self._command_exists("stegseek"):
+                    return "`stegseek` is not installed."
+                wordlist = tool_input.get("wordlist") or "/usr/share/wordlists/rockyou.txt"
+                if not os.path.exists(wordlist):
+                    return f"Wordlist not found: {wordlist}"
+                cmd = ["stegseek", filepath, wordlist, "--quiet"]
+                timeout = tool_input.get("timeout", 600)
+                try:
+                    timeout = int(timeout) if timeout is not None else 600
+                except (TypeError, ValueError):
+                    timeout = 600
+                result = self.run_popen(cmd, shell=False, timeout=timeout)
+                output_file = f"{filepath}.out"
+                if os.path.exists(output_file):
+                    result += f"\n\nRecovered data saved to: {output_file}"
+                return result
+
+            if tool_name == "ffuf_scan":
+                if not self._command_exists("ffuf"):
+                    return "`ffuf` is not installed."
+                url = tool_input["url"]
+                wordlist = tool_input.get("wordlist") or "/usr/share/wordlists/dirb/common.txt"
+                if not os.path.exists(wordlist):
+                    return f"Wordlist not found: {wordlist}"
+                cmd = ["ffuf", "-u", url, "-w", wordlist]
+                method = tool_input.get("method")
+                if method:
+                    cmd.extend(["-X", method.upper()])
+                headers = tool_input.get("headers") or {}
+                if isinstance(headers, dict):
+                    iterable = headers.items()
+                elif isinstance(headers, list):
+                    iterable = []
+                    for item in headers:
+                        if isinstance(item, str) and ":" in item:
+                            key, value = item.split(":", 1)
+                            iterable.append((key.strip(), value.strip()))
+                else:
+                    iterable = []
+                for key, value in iterable:
+                    cmd.extend(["-H", f"{key}: {value}"])
+                extensions = tool_input.get("extensions")
+                if extensions:
+                    if isinstance(extensions, (list, tuple)):
+                        cmd.extend(["-e", ",".join(str(ext) for ext in extensions)])
+                    else:
+                        cmd.extend(["-e", str(extensions)])
+                threads = tool_input.get("threads")
+                if threads:
+                    cmd.extend(["-t", str(threads)])
+                rate = tool_input.get("rate")
+                if rate:
+                    cmd.extend(["-r", str(rate)])
+                match_status = tool_input.get("match_status")
+                if match_status:
+                    cmd.extend(["-mc", str(match_status)])
+                filter_status = tool_input.get("filter_status")
+                if filter_status:
+                    cmd.extend(["-fc", str(filter_status)])
+                filter_size = tool_input.get("filter_size")
+                if filter_size:
+                    cmd.extend(["-fs", str(filter_size)])
+                silent = tool_input.get("silent")
+                if silent:
+                    cmd.append("-s")
+                try:
+                    timeout = int(tool_input.get("timeout", 900))
+                except (TypeError, ValueError):
+                    timeout = 900
+                return self.run_popen(cmd, shell=False, timeout=timeout)
+
+            if tool_name == "whatweb_scan":
+                if not self._command_exists("whatweb"):
+                    return "`whatweb` is not installed."
+                url = tool_input["url"]
+                cmd = ["whatweb", "--color=never", url]
+                aggressive = bool(tool_input.get("aggressive", False))
+                if aggressive:
+                    level = tool_input.get("aggression_level", 3)
+                    try:
+                        level_int = int(level)
+                    except (TypeError, ValueError):
+                        level_int = 3
+                    cmd.extend(["-a", str(level_int)])
+                plugins = tool_input.get("plugins")
+                if plugins:
+                    if isinstance(plugins, (list, tuple)):
+                        cmd.extend(["-p", ",".join(str(p) for p in plugins)])
+                    else:
+                        cmd.extend(["-p", str(plugins)])
+                user_agent = tool_input.get("user_agent")
+                if user_agent:
+                    cmd.extend(["-U", str(user_agent)])
+                timeout_raw = tool_input.get("timeout")
+                try:
+                    timeout_val = int(timeout_raw) if timeout_raw is not None else 300
+                except (TypeError, ValueError):
+                    timeout_val = 300
+                cmd.extend(["--timeout", str(timeout_val)])
+                return self.run_popen(cmd, shell=False, timeout=timeout_val)
+
+            if tool_name == "list_directory":
+                path = tool_input.get("path") or "."
+                show_hidden = bool(tool_input.get("show_hidden", False))
+                recursive = bool(tool_input.get("recursive", False))
+                try:
+                    lines = self._list_directory(path, show_hidden, recursive)
+                    return "\n".join(lines) if lines else "Directory is empty."
+                except FileNotFoundError:
+                    return f"Path not found: {path}"
+                except PermissionError:
+                    return f"Permission denied: {path}"
+                except NotADirectoryError:
+                    return f"Not a directory: {path}"
+
+            if tool_name == "search_files":
+                pattern = tool_input["pattern"]
+                start_path = tool_input.get("start_path") or "."
+                file_glob = tool_input.get("file_glob")
+                try:
+                    max_results = int(tool_input.get("max_results", 200))
+                except (TypeError, ValueError):
+                    max_results = 200
+                case_sensitive = bool(tool_input.get("case_sensitive", False))
+                timeout = tool_input.get("timeout")
+                return self._search_files(pattern, start_path, file_glob, max_results, case_sensitive, timeout)
+
+            if tool_name == "extract_archive":
+                archive_path = tool_input["archive_path"]
+                destination = tool_input.get("destination")
+                try:
+                    output_path, extracted = self._extract_archive(archive_path, destination)
+                    detail = "\n  ".join(extracted[:50])
+                    if len(extracted) > 50:
+                        detail += "\n  ... (truncated)"
+                    return f"Archive extracted to: {output_path}\n  {detail}" if extracted else f"Archive extracted to: {output_path}"
+                except FileNotFoundError:
+                    return f"Archive not found: {archive_path}"
+                except shutil.ReadError as exc:
+                    return f"Unable to extract archive: {exc}"
+                except Exception as exc:
+                    return f"Archive extraction error: {exc}"
+
+            if tool_name == "hexdump_file":
+                filepath = tool_input["filepath"]
+                try:
+                    max_bytes = int(tool_input.get("max_bytes", 4096))
+                except (TypeError, ValueError):
+                    max_bytes = 4096
+                try:
+                    width = int(tool_input.get("width", 16))
+                except (TypeError, ValueError):
+                    width = 16
+                try:
+                    with open(filepath, "rb") as fh:
+                        data = fh.read(max_bytes)
+                    if not data:
+                        return "File is empty."
+                    has_more = os.path.getsize(filepath) > len(data)
+                    dump = self._hexdump(data, width)
+                    if has_more:
+                        dump += "\n... (truncated)"
+                    return dump
+                except FileNotFoundError:
+                    return f"File not found: {filepath}"
+                except PermissionError:
+                    return f"Permission denied: {filepath}"
+
             return f"Unknown tool: {tool_name}"
 
         except Exception as e:
             return f"Tool error: {e}"
+
+    def _list_directory(self, path: str, show_hidden: bool, recursive: bool) -> List[str]:
+        entries = []
+        if recursive:
+            for root, dirs, files in os.walk(path):
+                entries.append(f"[{root}]")
+                entries.extend(self._format_dir_entries(root, dirs, files, show_hidden))
+        else:
+            with os.scandir(path) as it:
+                dirs = []
+                files = []
+                for entry in it:
+                    if not show_hidden and entry.name.startswith("."):
+                        continue
+                    (dirs if entry.is_dir(follow_symlinks=False) else files).append(entry)
+                entries.extend(self._format_scandir_entries(dirs + files))
+        return entries
+
+    def _format_dir_entries(self, root: str, dirs: List[str], files: List[str], show_hidden: bool) -> List[str]:
+        outputs: List[str] = []
+        for name in sorted(dirs):
+            if not show_hidden and name.startswith("."):
+                continue
+            full = os.path.join(root, name)
+            outputs.append(self._format_path_line(full, True))
+        for name in sorted(files):
+            if not show_hidden and name.startswith("."):
+                continue
+            full = os.path.join(root, name)
+            outputs.append(self._format_path_line(full, False))
+        return outputs
+
+    def _format_scandir_entries(self, entries: List[os.DirEntry]) -> List[str]:
+        lines: List[str] = []
+        for entry in sorted(entries, key=lambda e: e.name.lower()):
+            is_dir = entry.is_dir(follow_symlinks=False)
+            lines.append(self._format_path_line(entry.path, is_dir))
+        return lines
+
+    def _format_path_line(self, path: str, is_dir: bool) -> str:
+        try:
+            stat_info = os.stat(path, follow_symlinks=False)
+            size = stat_info.st_size
+            mtime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stat_info.st_mtime))
+        except FileNotFoundError:
+            return f"{path} [missing]"
+        label = path + ("/" if is_dir else "")
+        return f"{mtime}  {size:>10}  {label}"
+
+    def _search_files(self, pattern: str, start_path: str, file_glob: Optional[str],
+                      max_results: int, case_sensitive: bool, timeout: Optional[int]) -> str:
+        flags = 0 if case_sensitive else re.IGNORECASE
+        try:
+            regex = re.compile(pattern, flags)
+        except re.error as exc:
+            return f"Invalid regex: {exc}"
+
+        timeout_value: Optional[int]
+        if timeout is not None:
+            try:
+                timeout_value = int(timeout)
+            except (TypeError, ValueError):
+                timeout_value = None
+        else:
+            timeout_value = None
+
+        if shutil.which("rg"):
+            cmd = ["rg", "--color", "never", "-n", "-m", str(max_results), pattern, start_path]
+            if not case_sensitive:
+                cmd.insert(1, "--ignore-case")
+            if file_glob:
+                cmd.extend(["-g", file_glob])
+            return self.run_popen(cmd, shell=False, timeout=timeout_value or 180)
+
+        matches: List[str] = []
+        for root, _, files in os.walk(start_path):
+            for filename in files:
+                if file_glob and not fnmatch.fnmatch(filename, file_glob):
+                    continue
+                filepath = os.path.join(root, filename)
+                try:
+                    with open(filepath, "r", encoding="utf-8", errors="ignore") as fh:
+                        for idx, line in enumerate(fh, 1):
+                            if regex.search(line):
+                                matches.append(f"{filepath}:{idx}: {line.rstrip()}")
+                                if len(matches) >= max_results:
+                                    return "\n".join(matches)
+                except (UnicodeDecodeError, OSError):
+                    continue
+        return "\n".join(matches) if matches else "No matches."
+
+    def _extract_archive(self, archive_path: str, destination: Optional[str]) -> Tuple[str, List[str]]:
+        if not destination:
+            destination = os.path.join(
+                self.temp_dir,
+                f"operative_extract_{self.session_id}_{int(time.time())}"
+            )
+        os.makedirs(destination, exist_ok=True)
+        extracted_paths: List[str] = []
+        try:
+            shutil.unpack_archive(archive_path, destination)
+        except shutil.ReadError:
+            if archive_path.endswith(".gz"):
+                target_name = os.path.basename(archive_path[:-3]) or "decompressed"
+                target_path = os.path.join(destination, target_name)
+                with gzip.open(archive_path, "rb") as src, open(target_path, "wb") as dst:
+                    dst.write(src.read())
+            else:
+                raise
+
+        for root, dirs, files in os.walk(destination):
+            for name in dirs + files:
+                extracted_paths.append(os.path.join(root, name))
+        if not extracted_paths:
+            extracted_paths.append(destination)
+        return destination, extracted_paths
+
+    def _hexdump(self, data: bytes, width: int) -> str:
+        lines = []
+        for offset in range(0, len(data), width):
+            chunk = data[offset:offset + width]
+            hex_bytes = binascii.hexlify(chunk).decode("ascii")
+            hex_pairs = " ".join(hex_bytes[i:i+2] for i in range(0, len(hex_bytes), 2))
+            ascii_repr = "".join((chr(b) if 32 <= b <= 126 else ".") for b in chunk)
+            lines.append(f"{offset:08x}  {hex_pairs:<{width*3}}  {ascii_repr}")
+        return "\n".join(lines)
 
 
 # ---------- Base Agent ----------
 class BaseAgent:
     """Base class for both Claude and OpenAI agents"""
     
-    def __init__(self, api_provider: str, max_history=MAX_HISTORY_ENTRIES, debug: bool = False):
+    def __init__(self, api_provider: str, max_history=MAX_HISTORY_ENTRIES, debug: bool = False,
+                 system_prompt: Optional[str] = None):
         self.api_provider = api_provider
         self.conversation_history = []
         self.total_api_requests = 0
@@ -567,6 +1311,8 @@ class BaseAgent:
         self.max_history = max_history
         self.debug = debug
         self.tool_executor = ToolExecutor()
+        self.system_prompt = system_prompt
+        self._system_message_inserted = False
 
     def define_tools_schema(self):
         """Return tools in provider-specific format"""
@@ -574,7 +1320,11 @@ class BaseAgent:
 
     def truncate_history(self):
         while len(self.conversation_history) > self.max_history:
-            removed = self.conversation_history.pop(0)
+            if self.conversation_history and self.conversation_history[0].get("role") == "system":
+                remove_index = 1 if len(self.conversation_history) > 1 else 0
+            else:
+                remove_index = 0
+            removed = self.conversation_history.pop(remove_index)
             orphan_ids = self._collect_tool_call_ids(removed)
             if orphan_ids:
                 self._remove_tool_results_by_ids(orphan_ids)
@@ -660,30 +1410,288 @@ class BaseAgent:
 # ---------- Claude Agent ----------
 class ClaudeAgent(BaseAgent):
     def __init__(self, api_key: str, max_history=MAX_HISTORY_ENTRIES, debug: bool = False):
-        super().__init__("claude", max_history, debug)
+        super().__init__("claude", max_history, debug, system_prompt=CLAUDE_SYSTEM_PROMPT)
         self.client = anthropic.Anthropic(api_key=api_key)
         self.model_light = CLAUDE_HAIKU
         self.model_medium = CLAUDE_SONNET
         self.model_heavy = CLAUDE_OPUS
+        if self.system_prompt:
+            self._system_message_inserted = True
 
     def define_tools_schema(self):
         return [
-            {"name": "execute_command", "description": "Run shell command", 
-             "input_schema": {"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]}},
-            {"name": "read_file", "description": "Read file contents", 
-             "input_schema": {"type": "object", "properties": {"filepath": {"type": "string"}, "mode": {"type": "string", "enum": ["text", "binary", "hex"]}}, "required": ["filepath", "mode"]}},
-            {"name": "write_file", "description": "Write content to a file in /tmp/. Use this to save extracted data, decoded content, scripts, or any generated files.", 
-             "input_schema": {"type": "object", "properties": {"content": {"type": "string", "description": "Content to write"}, "filename": {"type": "string", "description": "Filename (optional, will auto-generate if not provided)"}, "extension": {"type": "string", "description": "File extension (e.g., txt, py, sh, bin)"}}, "required": ["content", "extension"]}},
-            {"name": "list_session_files", "description": "List all files created during this session", 
-             "input_schema": {"type": "object", "properties": {}, "required": []}},
-            {"name": "decode_base64", "description": "Decode base64 data", 
-             "input_schema": {"type": "object", "properties": {"data": {"type": "string"}}, "required": ["data"]}},
-            {"name": "compute_hash", "description": "Compute hash", 
-             "input_schema": {"type": "object", "properties": {"data": {"type": "string"}, "algorithm": {"type": "string", "enum": ["md5","sha1","sha256","sha512"]}}, "required": ["data","algorithm"]}},
-            {"name": "nmap_scan", "description": "Run nmap", 
-             "input_schema": {"type": "object", "properties": {"target": {"type": "string"}, "scan_type": {"type": "string", "enum": ["quick","full","version"]}}, "required": ["target","scan_type"]}},
-            {"name": "strings_extract", "description": "Extract strings", 
-             "input_schema": {"type": "object", "properties": {"filepath": {"type": "string"}, "min_length": {"type": "integer"}}, "required": ["filepath"]}},
+            {
+                "name": "execute_command",
+                "description": "Run shell command",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "command": {"type": "string"},
+                        "shell": {"type": "boolean", "description": "Run through shell (default true)"},
+                        "cwd": {"type": "string", "description": "Working directory"},
+                        "timeout": {"type": "integer", "minimum": 1},
+                        "env": {
+                            "type": "object",
+                            "description": "Environment variables",
+                            "additionalProperties": {"type": "string"}
+                        }
+                    },
+                    "required": ["command"]
+                }
+            },
+            {
+                "name": "read_file",
+                "description": "Read file contents",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "filepath": {"type": "string"},
+                        "mode": {"type": "string", "enum": ["text", "binary", "hex"]}
+                    },
+                    "required": ["filepath", "mode"]
+                }
+            },
+            {
+                "name": "write_file",
+                "description": "Write content to a file in /tmp/. Use this to save extracted data, decoded content, scripts, or any generated files.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "content": {"type": "string", "description": "Content to write"},
+                        "filename": {"type": "string", "description": "Filename (optional, will auto-generate if not provided)"},
+                        "extension": {"type": "string", "description": "File extension (e.g., txt, py, sh, bin)"}
+                    },
+                    "required": ["content", "extension"]
+                }
+            },
+            {
+                "name": "list_session_files",
+                "description": "List all files created during this session",
+                "input_schema": {"type": "object", "properties": {}, "required": []}
+            },
+            {
+                "name": "list_directory",
+                "description": "List directory contents",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "path": {"type": "string"},
+                        "show_hidden": {"type": "boolean"},
+                        "recursive": {"type": "boolean"}
+                    }
+                }
+            },
+            {
+                "name": "search_files",
+                "description": "Search files for a regex pattern",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "pattern": {"type": "string"},
+                        "start_path": {"type": "string"},
+                        "file_glob": {"type": "string"},
+                        "max_results": {"type": "integer", "minimum": 1},
+                        "case_sensitive": {"type": "boolean"},
+                        "timeout": {"type": "integer", "minimum": 1}
+                    },
+                    "required": ["pattern"]
+                }
+            },
+            {
+                "name": "extract_archive",
+                "description": "Extract archive (zip/tar/gz)",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "archive_path": {"type": "string"},
+                        "destination": {"type": "string"}
+                    },
+                    "required": ["archive_path"]
+                }
+            },
+            {
+                "name": "hexdump_file",
+                "description": "Generate a hexdump preview",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "filepath": {"type": "string"},
+                        "max_bytes": {"type": "integer", "minimum": 1},
+                        "width": {"type": "integer", "minimum": 4}
+                    },
+                    "required": ["filepath"]
+                }
+            },
+            {
+                "name": "http_fetch",
+                "description": "Perform an HTTP(S) request and return status/headers/body preview",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "url": {"type": "string"},
+                        "method": {"type": "string"},
+                        "headers": {"type": "object", "additionalProperties": {"type": "string"}},
+                        "data": {"type": "string"},
+                        "params": {
+                            "type": "object",
+                            "additionalProperties": {"type": "string"},
+                            "description": "Query string parameters to append"
+                        },
+                        "json": {
+                            "type": "object",
+                            "description": "JSON body to send with the request",
+                            "additionalProperties": True
+                        },
+                        "save_body": {"type": "boolean", "description": "Always persist the body to a session file"},
+                        "timeout": {"type": "integer", "minimum": 1},
+                        "follow_redirects": {"type": "boolean"},
+                        "insecure": {"type": "boolean"}
+                    },
+                    "required": ["url"]
+                }
+            },
+            {
+                "name": "file_info",
+                "description": "Display file metadata (size, perms, MIME)",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "filepath": {"type": "string"}
+                    },
+                    "required": ["filepath"]
+                }
+            },
+            {
+                "name": "checksec_analyze",
+                "description": "Run checksec (or pwn checksec) against a binary",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "filepath": {"type": "string"}
+                    },
+                    "required": ["filepath"]
+                }
+            },
+            {
+                "name": "binwalk_scan",
+                "description": "Run binwalk against a file (optional extraction)",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "filepath": {"type": "string"},
+                        "extract": {"type": "boolean"},
+                        "flags": {"type": "string"}
+                    },
+                    "required": ["filepath"]
+                }
+            },
+            {
+                "name": "exiftool_scan",
+                "description": "Run exiftool to inspect metadata",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "filepath": {"type": "string"}
+                    },
+                    "required": ["filepath"]
+                }
+            },
+            {
+                "name": "stegseek_crack",
+                "description": "Attempt to crack stego files with stegseek",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "filepath": {"type": "string"},
+                        "wordlist": {"type": "string"},
+                        "timeout": {"type": "integer", "minimum": 1}
+                    },
+                    "required": ["filepath"]
+                }
+            },
+            {
+                "name": "ffuf_scan",
+                "description": "Run ffuf for content discovery/fuzzing",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "url": {"type": "string"},
+                        "wordlist": {"type": "string"},
+                        "method": {"type": "string"},
+                        "headers": {"type": "object", "additionalProperties": {"type": "string"}},
+                        "extensions": {"type": ["array", "string"], "items": {"type": "string"}},
+                        "threads": {"type": "integer", "minimum": 1},
+                        "rate": {"type": "integer", "minimum": 1},
+                        "match_status": {"type": "string"},
+                        "filter_status": {"type": "string"},
+                        "filter_size": {"type": "string"},
+                        "timeout": {"type": "integer", "minimum": 1},
+                        "silent": {"type": "boolean"}
+                    },
+                    "required": ["url"]
+                }
+            },
+            {
+                "name": "whatweb_scan",
+                "description": "Fingerprint a target using whatweb",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "url": {"type": "string"},
+                        "aggressive": {"type": "boolean"},
+                        "aggression_level": {"type": "integer", "minimum": 1},
+                        "plugins": {"type": ["array", "string"], "items": {"type": "string"}},
+                        "user_agent": {"type": "string"},
+                        "timeout": {"type": "integer", "minimum": 1}
+                    },
+                    "required": ["url"]
+                }
+            },
+            {
+                "name": "decode_base64",
+                "description": "Decode base64 data",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {"data": {"type": "string"}},
+                    "required": ["data"]
+                }
+            },
+            {
+                "name": "compute_hash",
+                "description": "Compute hash",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "data": {"type": "string"},
+                        "algorithm": {"type": "string", "enum": ["md5", "sha1", "sha256", "sha512"]}
+                    },
+                    "required": ["data", "algorithm"]
+                }
+            },
+            {
+                "name": "nmap_scan",
+                "description": "Run nmap",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "target": {"type": "string"},
+                        "scan_type": {"type": "string", "enum": ["quick", "full", "version"]}
+                    },
+                    "required": ["target", "scan_type"]
+                }
+            },
+            {
+                "name": "strings_extract",
+                "description": "Extract strings",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "filepath": {"type": "string"},
+                        "min_length": {"type": "integer"}
+                    },
+                    "required": ["filepath"]
+                }
+            },
         ]
 
     def pick_model(self, inline_model: Optional[str] = None) -> str:
@@ -705,6 +1713,9 @@ class ClaudeAgent(BaseAgent):
 
     def chat(self, user_message: str, auto_execute: bool, inline_model: Optional[str] = None, 
              max_steps: int = DEFAULT_MAX_STEPS):
+        if self.system_prompt and not self._system_message_inserted:
+            self.conversation_history.insert(0, {"role": "system", "content": self.system_prompt})
+            self._system_message_inserted = True
         # Add session context if files exist
         session_context = self.tool_executor.get_session_context()
         if session_context:
@@ -723,11 +1734,16 @@ class ClaudeAgent(BaseAgent):
             try:
                 self.total_api_requests += 1
                 thinking.start()
+                request_kwargs = {
+                    "model": model,
+                    "max_tokens": 4096,
+                    "tools": self.define_tools_schema(),
+                    "messages": self.conversation_history,
+                }
+                if self.system_prompt:
+                    request_kwargs["system"] = self.system_prompt
                 response = self.client.messages.create(
-                    model=model,
-                    max_tokens=4096,
-                    tools=self.define_tools_schema(),
-                    messages=self.conversation_history
+                    **request_kwargs
                 )
                 thinking.stop()
             except KeyboardInterrupt:
@@ -793,11 +1809,11 @@ class ClaudeAgent(BaseAgent):
 # ---------- OpenAI Agent ----------
 class OpenAIAgent(BaseAgent):
     def __init__(self, api_key: str, max_history=MAX_HISTORY_ENTRIES, debug: bool = False):
-        super().__init__("openai", max_history, debug)
+        super().__init__("openai", max_history, debug, system_prompt=OPENAI_SYSTEM_PROMPT)
         self.client = openai.OpenAI(api_key=api_key)
         self.model_light = GPT35_TURBO
         self.model_medium = GPT4O_MINI
-        self.model_heavy = GPT4O
+        self.model_heavy = GPT4
 
     def define_tools_schema(self):
         return [
@@ -808,7 +1824,17 @@ class OpenAIAgent(BaseAgent):
                     "description": "Run shell command on Kali system",
                     "parameters": {
                         "type": "object",
-                        "properties": {"command": {"type": "string", "description": "Shell command to execute"}},
+                        "properties": {
+                            "command": {"type": "string", "description": "Shell command to execute"},
+                            "shell": {"type": "boolean", "description": "Run through shell (default true)"},
+                            "cwd": {"type": "string", "description": "Working directory"},
+                            "timeout": {"type": "integer", "minimum": 1, "description": "Timeout in seconds"},
+                            "env": {
+                                "type": "object",
+                                "description": "Environment variables",
+                                "additionalProperties": {"type": "string"}
+                            }
+                        },
                         "required": ["command"]
                     }
                 }
@@ -853,6 +1879,221 @@ class OpenAIAgent(BaseAgent):
                         "type": "object",
                         "properties": {},
                         "required": []
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "list_directory",
+                    "description": "List directory contents",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "path": {"type": "string"},
+                            "show_hidden": {"type": "boolean"},
+                            "recursive": {"type": "boolean"}
+                        },
+                        "required": []
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "search_files",
+                    "description": "Search files for a regex pattern",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "pattern": {"type": "string"},
+                            "start_path": {"type": "string"},
+                            "file_glob": {"type": "string"},
+                            "max_results": {"type": "integer", "minimum": 1},
+                            "case_sensitive": {"type": "boolean"},
+                            "timeout": {"type": "integer", "minimum": 1}
+                        },
+                        "required": ["pattern"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "extract_archive",
+                    "description": "Extract archive (zip/tar/gz)",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "archive_path": {"type": "string"},
+                            "destination": {"type": "string"}
+                        },
+                        "required": ["archive_path"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "hexdump_file",
+                    "description": "Generate a hexdump preview",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "filepath": {"type": "string"},
+                            "max_bytes": {"type": "integer", "minimum": 1},
+                            "width": {"type": "integer", "minimum": 4}
+                        },
+                        "required": ["filepath"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "http_fetch",
+                    "description": "Perform an HTTP(S) request and return status/headers/body preview",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "url": {"type": "string"},
+                            "method": {"type": "string"},
+                            "headers": {"type": "object", "additionalProperties": {"type": "string"}},
+                            "data": {"type": "string"},
+                            "params": {
+                                "type": "object",
+                                "additionalProperties": {"type": "string"},
+                                "description": "Query string parameters to append"
+                            },
+                            "json": {
+                                "type": "object",
+                                "description": "JSON body to send with the request",
+                                "additionalProperties": True
+                            },
+                            "save_body": {"type": "boolean", "description": "Always persist the body to a session file"},
+                            "timeout": {"type": "integer", "minimum": 1},
+                            "follow_redirects": {"type": "boolean"},
+                            "insecure": {"type": "boolean"}
+                        },
+                        "required": ["url"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "file_info",
+                    "description": "Display file metadata (size, perms, MIME)",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "filepath": {"type": "string"}
+                        },
+                        "required": ["filepath"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "checksec_analyze",
+                    "description": "Run checksec (or pwn checksec) against a binary",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "filepath": {"type": "string"}
+                        },
+                        "required": ["filepath"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "binwalk_scan",
+                    "description": "Run binwalk against a file (optional extraction)",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "filepath": {"type": "string"},
+                            "extract": {"type": "boolean"},
+                            "flags": {"type": "string"}
+                        },
+                        "required": ["filepath"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "exiftool_scan",
+                    "description": "Run exiftool to inspect metadata",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "filepath": {"type": "string"}
+                        },
+                        "required": ["filepath"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "stegseek_crack",
+                    "description": "Attempt to crack stego files with stegseek",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "filepath": {"type": "string"},
+                            "wordlist": {"type": "string"},
+                            "timeout": {"type": "integer", "minimum": 1}
+                        },
+                        "required": ["filepath"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "ffuf_scan",
+                    "description": "Run ffuf for content discovery/fuzzing",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "url": {"type": "string"},
+                            "wordlist": {"type": "string"},
+                            "method": {"type": "string"},
+                            "headers": {"type": "object", "additionalProperties": {"type": "string"}},
+                            "extensions": {"type": ["array", "string"], "items": {"type": "string"}},
+                            "threads": {"type": "integer", "minimum": 1},
+                            "rate": {"type": "integer", "minimum": 1},
+                            "match_status": {"type": "string"},
+                            "filter_status": {"type": "string"},
+                            "filter_size": {"type": "string"},
+                            "timeout": {"type": "integer", "minimum": 1},
+                            "silent": {"type": "boolean"}
+                        },
+                        "required": ["url"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "whatweb_scan",
+                    "description": "Fingerprint a target using whatweb",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "url": {"type": "string"},
+                            "aggressive": {"type": "boolean"},
+                            "aggression_level": {"type": "integer", "minimum": 1},
+                            "plugins": {"type": ["array", "string"], "items": {"type": "string"}},
+                            "user_agent": {"type": "string"},
+                            "timeout": {"type": "integer", "minimum": 1}
+                        },
+                        "required": ["url"]
                     }
                 }
             },
@@ -1045,7 +2286,7 @@ class OpenAIAgent(BaseAgent):
             return "Tool execution cancelled."
 
 # ---------- Banner / Prompt / Readline ----------
-def print_banner(api_provider: str, default_auto_exec: bool, default_max_steps: int):
+def print_banner(api_provider: str, default_auto_exec: bool, default_max_steps: int, history_window: int):
     # ASCII Art Banner
     print(color("""
  ██████╗ ██████╗ ███████╗██████╗  █████╗ ████████╗██╗██╗   ██╗███████╗
@@ -1105,6 +2346,7 @@ def print_banner(api_provider: str, default_auto_exec: bool, default_max_steps: 
         autoexec_text = "✗ Disabled"
         autoexec_color = C.RED + C.BOLD
     steps_str = str(default_max_steps)
+    history_str = str(history_window)
 
     print(box_line([
         (" ", C.ORANGE),
@@ -1130,6 +2372,12 @@ def print_banner(api_provider: str, default_auto_exec: bool, default_max_steps: 
         (" ", C.ORANGE),
         (steps_str, C.GREEN + C.BOLD),
     ]))
+    print(box_line([
+        (" ", C.ORANGE),
+        ("🗃  History Depth:", C.ORANGE),
+        (" ", C.ORANGE),
+        (history_str, C.GREEN + C.BOLD),
+    ]))
 
     print(color(box_mid, C.ORANGE))
     print(box_line([
@@ -1145,7 +2393,8 @@ def print_banner(api_provider: str, default_auto_exec: bool, default_max_steps: 
         ]
     else:
         models = [
-            ("GPT-4o", "(Heavy)"),
+            ("GPT-4", "(Heavy)"),
+            ("GPT-4o", "(Alt Heavy)"),
             ("GPT-4o Mini", "(Medium)"),
             ("GPT-3.5 Turbo", "(Light)"),
         ]
@@ -1199,7 +2448,10 @@ class ThinkingAnimation:
     def __init__(self):
         self.running = False
         self.thread = None
-        self.frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+        if SUPPORTS_UNICODE:
+            self.frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+        else:
+            self.frames = ["-", "\\", "|", "/"]
         self.current_frame = 0
     
     def _animate(self):
@@ -1275,6 +2527,15 @@ def print_session_help():
     print(color("  • read_file           ", C.YELLOW) + "Read files (text/hex/binary)")
     print(color("  • write_file          ", C.YELLOW) + "Save content to /tmp/ (auto-tracked)")
     print(color("  • list_session_files  ", C.YELLOW) + "Show files created this session")
+    print(color("  • list_directory      ", C.YELLOW) + "Inspect folders (supports hidden/recursive)")
+    print(color("  • search_files        ", C.YELLOW) + "Regex search with ripgrep or Python fallback")
+    print(color("  • extract_archive     ", C.YELLOW) + "Unpack zip/tar/gz archives")
+    print(color("  • hexdump_file        ", C.YELLOW) + "Preview bytes in hex/ascii")
+    print(color("  • file_info           ", C.YELLOW) + "Quick metadata (size/perms/MIME)")
+    print(color("  • checksec_analyze    ", C.YELLOW) + "Assess binary protections")
+    print(color("  • binwalk_scan        ", C.YELLOW) + "Scan firmware/images (optional extract)")
+    print(color("  • exiftool_scan       ", C.YELLOW) + "Enumerate file metadata")
+    print(color("  • stegseek_crack      ", C.YELLOW) + "Attempt steg password crack")
     print(color("  • decode_base64       ", C.YELLOW) + "Decode base64 data")
     print(color("  • compute_hash        ", C.YELLOW) + "Calculate MD5/SHA1/SHA256/SHA512")
     print(color("  • nmap_scan           ", C.YELLOW) + "Port scanning (quick/full/version)")
@@ -1302,9 +2563,12 @@ def main():
   
   # Disable auto-execute for safety
   python3 operatives.py --auto-execute=false
-  
+
   # Custom max steps
   python3 operatives.py --api=claude --max-steps=25
+
+  # Keep longer history
+  python3 operatives.py --max-history=40
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                         🔧 INLINE FLAGS (During Chat)
@@ -1361,8 +2625,18 @@ You only need the key for the API you intend to use.
                            🛠  AVAILABLE TOOLS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  • execute_command      Run shell commands
+  • execute_command      Run shell commands (supports cwd/timeout/env)
   • read_file            Read files (text/hex/binary)
+  • write_file           Save content to /tmp/ (auto-tracked)
+  • list_directory       Inspect folders (hidden/recursive options)
+  • search_files         Regex search (ripgrep or Python fallback)
+  • extract_archive      Unpack zip/tar/gz archives
+  • hexdump_file         Preview bytes in hex/ascii
+  • file_info            Quick metadata (size/perms/MIME)
+  • checksec_analyze     Assess binary protections
+  • binwalk_scan         Scan firmware/images (optional extract)
+  • exiftool_scan        Enumerate file metadata
+  • stegseek_crack       Attempt steg password crack
   • decode_base64        Decode base64 data
   • compute_hash         Calculate MD5/SHA1/SHA256/SHA512
   • nmap_scan            Port scanning (quick/full/version)
@@ -1379,12 +2653,15 @@ The AI will automatically choose and execute tools based on your requests.
                        help="Auto-execute tools by default (true|false, default: true)")
     parser.add_argument("--max-steps", type=int, default=DEFAULT_MAX_STEPS, 
                        help=f"Default max steps per request (default: {DEFAULT_MAX_STEPS})")
+    parser.add_argument("--max-history", type=int, default=MAX_HISTORY_ENTRIES,
+                       help=f"Conversation turns to retain (default: {MAX_HISTORY_ENTRIES})")
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
     args = parser.parse_args()
 
     api_provider = args.api.lower()
     default_auto_exec = args.auto_execute.lower() == "true"
     default_max_steps = max(1, args.max_steps)
+    max_history = max(1, args.max_history)
 
     # Check API availability and get key
     if api_provider == "claude":
@@ -1395,7 +2672,7 @@ The AI will automatically choose and execute tools based on your requests.
         if not api_key:
             print(color("❌ Missing ANTHROPIC_API_KEY environment variable", C.RED))
             return
-        agent = ClaudeAgent(api_key, debug=args.debug)
+        agent = ClaudeAgent(api_key, max_history=max_history, debug=args.debug)
         
         # Set generic aliases to Claude models
         MODEL_ALIASES["light"] = CLAUDE_HAIKU
@@ -1409,15 +2686,15 @@ The AI will automatically choose and execute tools based on your requests.
         if not api_key:
             print(color("❌ Missing OPENAI_API_KEY environment variable", C.RED))
             return
-        agent = OpenAIAgent(api_key, debug=args.debug)
+        agent = OpenAIAgent(api_key, max_history=max_history, debug=args.debug)
         
         # Set generic aliases to OpenAI models
         MODEL_ALIASES["light"] = GPT35_TURBO
         MODEL_ALIASES["medium"] = GPT4O_MINI
-        MODEL_ALIASES["heavy"] = GPT4O
+        MODEL_ALIASES["heavy"] = GPT4
 
     setup_readline()
-    print_banner(api_provider, default_auto_exec, default_max_steps)
+    print_banner(api_provider, default_auto_exec, default_max_steps, max_history)
 
     try:
         while True:
@@ -1448,6 +2725,7 @@ The AI will automatically choose and execute tools based on your requests.
             # special in-session commands
             if raw_strip.lower() in (":reset", "reset", "clear-history"):
                 agent.conversation_history = []
+                agent._system_message_inserted = False
                 print(color("⚡ History cleared", C.YELLOW))
                 continue
 
