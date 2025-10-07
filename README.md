@@ -23,7 +23,7 @@
 
 ## 📋 Features
 
-- 🐧 **Lab-only / Kali-friendly** — Built for chaos labs and VMs you actually own (don't let the bot touch prod 💀 respectfully speaking)  
+- 🐧 **Kali-friendly** — Built for chaos labs and VMs you actually own (don't let the bot touch prod 💀 respectfully speaking)  
 - 🤖 **Multi-Model Flow** — Claude ↔ GPT on command. Swap brains mid-session when you vibe different fr.  
 - 🧰 **All-in-One Toolkit** — nmap · ffuf · binwalk · exiftool · stegseek · strings · http utils · and more (pretty solid collection ngl).  
 - 📂 **Auto-Save Everything** — Decodes, dumps, and outputs go straight to `/tmp/` — no "where did that go" moment (bestie never forgets).  
