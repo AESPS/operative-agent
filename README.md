@@ -373,7 +373,6 @@ This tool is designed for **authorized security testing and CTF competitions onl
 
 - ✅ Educational purposes in controlled environments (learning is based)
 - ✅ CTF competitions and wargames (aura farming territory)
-- ✅ Penetration testing with explicit permission (get that written approval bestie)
 - ❌ Unauthorized access to systems (don't be that person fr)
 - ❌ Malicious activities (we don't condone chaos in the wild)
 
