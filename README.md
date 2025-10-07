@@ -156,10 +156,10 @@ Operator [root]: deep analysis --max-steps=50
 ---
 
 ## 🛠️ Agent-Managed Toolset
-*(automatically invoked by Operative; users just describe what they need)*
+*(Automatically invoked by Operative-agent; users just describe what they need)*
+“Agent triggers these tools after you ask for a specific task.”
 
 ### 🔍 **Reconnaissance**
-“Agent triggers these reconnaissance tools after you ask for a scan.”
 | Tool | Description | Key Features |
 |------|-------------|--------------|
 | `nmap_scan` | Network port scanning | Quick/full/version scans |
@@ -476,6 +476,15 @@ This tool is designed for **authorized security testing and CTF competitions onl
 - ❌ Unauthorized access to systems
 - ❌ Malicious activities
 
+## ⚠️ Note
+-  This AI-powered CTF agent can be really helpful in your cybersecurity journey, but keep these points in mind:
+-  AI isn't perfect: It can make mistakes or "hallucinate" answers. Always double-check what it suggests.
+-  Not a replacement for skill: This tool is here to help you, not play the game for you. It can speed up your work, handle boring tasks, and give you ideas — but real CTF skills still come from you.
+-  Mixed results: It does great with simple challenges like forensics, crypto, and basic web tasks. But for harder ones (like pwn or reversing), you'll still need to dig in yourself.
+-  Beware of hosted services like web that may block AI from accessing (usually in robots.txt). In some cases can be bypassed by using proper headers and cookies.
+-  **Input Limitations**: When pasting multi-line content, each newline is treated as a separate command. For large data blocks, either remove newlines or save to a file first.
+
+
 **You are responsible for your actions.** The authors assume no liability for misuse.
 
 ---
@@ -491,7 +500,7 @@ This tool is designed for **authorized security testing and CTF competitions onl
 
 <div align="center">
 
-**Built with 🔥 by [@AESPS](https://github.com/AESPS)**
+**Built with 🔥 by Ong Gedek Gedek**
 
 *Kalau kan membantu, star saja repo ani. API mahal bah! 😅*
 
