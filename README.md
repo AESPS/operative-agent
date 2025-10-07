@@ -473,8 +473,7 @@ Use it, mod it, share it. Just don't be that person who takes credit for other p
 
 **Built with 🔥 by Ong Gedek Gedek**
 
-*Kalau kan membantu, star saja repo ani. API mahal yo! 😅*  
-*(If this helps you out, drop a star on this repo. APIs cost money fr fr!)*
+If it saved you some brain cells, give it a ⭐ 😭
 
 No cap, this project is absolutely mogging the CTF automation game. Stay humble, stay hungry, keep grinding. 🔥
 
