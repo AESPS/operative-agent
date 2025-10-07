@@ -28,7 +28,7 @@
 - 🎯 **CTF helpers** — flag heuristics, binary checks, shellcode inspection helpers.
 - ⚙️ **Execution control** — automatic or manual confirmation; inline flag overrides per command.
 - 📦 **Session file tracking** — list, read, and purge session artifacts.
-- 💸 **Cost note** — APIs cost money; recommend using light/medium models for routine tasks. Nasi katok not included. 😂
+- 💸 **Cost note** — api mahal :')  bali kridit $5 inda batah tu. Nasi katok dapat 5 kanyang makan awo 
 
 
 ---
