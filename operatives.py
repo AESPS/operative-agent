@@ -972,6 +972,11 @@ class ToolExecutor:
                 cmd = ["binwalk", filepath]
                 if extract:
                     cmd.insert(1, "-e")
+                    try:
+                        if hasattr(os, "geteuid") and os.geteuid() == 0:
+                            cmd.append("--run-as=root")
+                    except Exception:
+                        pass
                 if flags_raw:
                     try:
                         extra_flags = shlex.split(str(flags_raw))
