@@ -82,6 +82,48 @@ def load_flag_prefixes(path: str = FLAG_PREFIXES_FILE) -> List[str]:
 FLAG_PREFIXES = load_flag_prefixes()
 FLAG_REGEX = re.compile(r"(" + "|".join(re.escape(p) for p in FLAG_PREFIXES) + r")\{.*?\}", re.IGNORECASE)
 
+def _format_flag_prefixes(prefixes: List[str]) -> str:
+    seen = set()
+    ordered = []
+    for prefix in prefixes:
+        if prefix not in seen:
+            ordered.append(prefix)
+            seen.add(prefix)
+    return ", ".join(ordered)
+
+FLAG_PREFIX_DISPLAY = _format_flag_prefixes(FLAG_PREFIXES)
+FLAG_PREFIX_NOTE = (
+    "\nKnown flag prefixes on this system: "
+    + FLAG_PREFIX_DISPLAY
+    + ". When hunting for flags, grep/strings for each of these prefixes in addition to generic 'flag' searches."
+) if FLAG_PREFIX_DISPLAY else ""
+
+
+def extract_flag_candidates(text: Optional[str]) -> List[str]:
+    if not text:
+        return []
+    return [match.group(0) for match in FLAG_REGEX.finditer(text)]
+
+
+def is_confident_flag(candidate: str) -> bool:
+    if not candidate or "{" not in candidate or "}" not in candidate:
+        return False
+    inside = candidate[candidate.find("{") + 1 : candidate.rfind("}")]
+    if not inside or len(inside) < 4:
+        return False
+    if "..." in inside:
+        return False
+    if any(ch.isspace() for ch in inside):
+        return False
+    return True
+
+
+def contains_confident_flag(text: Optional[str]) -> bool:
+    for candidate in extract_flag_candidates(text):
+        if is_confident_flag(candidate):
+            return True
+    return False
+
 CTF_REFERENCE_TEXT = """\
 File Recon:
   file target
@@ -132,8 +174,8 @@ CLAUDE_MODELS = {
 }
 
 OPENAI_MODELS = {
-    GPT4: "GPT-4 (Heavy)",
-    GPT4O: "GPT-4o (Alt Heavy)",
+    GPT4O: "GPT-4o (Heavy)",
+    GPT4: "GPT-4 (Legacy Heavy)",
     GPT4O_MINI: "GPT-4o Mini (Medium)",
     GPT35_TURBO: "GPT-3.5 Turbo (Light)",
 }
@@ -151,8 +193,10 @@ OPENAI_SYSTEM_PROMPT = (
     "Always think out loud, sketch a short plan before acting, and iterate through tool usage. "
     "Prefer writing helper scripts with write_file + python3 rather than long python -c commands. "
     "When you encounter encoded malware or shellcode, try decoding, disassembling (using capstone if present), "
-    "and extracting embedded data. Suggest and attempt additional recon techniques when initial steps fail. "
+    "and extracting embedded data. Send interactive program input via the execute_command input field. "
+    "Suggest and attempt additional recon techniques when initial steps fail. "
     "Never stop after the first hurdle—look for the next investigative angle."
+    f"{FLAG_PREFIX_NOTE}"
 )
 
 CLAUDE_SYSTEM_PROMPT = (
@@ -160,7 +204,9 @@ CLAUDE_SYSTEM_PROMPT = (
     "Work through problems methodically, sharing a brief plan, using available tools, and creating helper scripts "
     "when appropriate. Favor write_file + python3 scripts over brittle python -c commands. "
     "For shellcode or binaries, attempt decoding, disassembly, and other reversing techniques (capstone, radare2, etc.) "
+    "Provide stdin to interactive binaries using the execute_command input parameter. "
     "before concluding. Keep pushing the investigation forward."
+    f"{FLAG_PREFIX_NOTE}"
 )
 
 # ---------- Colors ----------
@@ -753,7 +799,7 @@ class ToolExecutor:
             return [str(part) for part in cmd]
         return cmd
 
-    def run_popen(self, cmd, shell=False, timeout=None, cwd=None, env=None):
+    def run_popen(self, cmd, shell=False, timeout=None, cwd=None, env=None, stdin_data: Optional[str] = None):
         cmd = self._normalize_command(cmd, shell)
         if cmd is None or cmd == []:
             return "Tool error: empty command"
@@ -762,6 +808,7 @@ class ToolExecutor:
             if env:
                 merged_env = os.environ.copy()
                 merged_env.update({str(k): str(v) for k, v in env.items()})
+            stdin_pipe = subprocess.PIPE if stdin_data is not None else None
             proc = subprocess.Popen(
                 cmd,
                 shell=shell,
@@ -769,11 +816,12 @@ class ToolExecutor:
                 stderr=subprocess.PIPE,
                 text=True,
                 cwd=cwd or None,
-                env=merged_env
+                env=merged_env,
+                stdin=stdin_pipe
             )
             self._current_proc = proc
             try:
-                out, err = proc.communicate(timeout=timeout)
+                out, err = proc.communicate(input=stdin_data, timeout=timeout)
             except subprocess.TimeoutExpired:
                 try:
                     proc.kill()
@@ -817,7 +865,10 @@ class ToolExecutor:
                     timeout = 120
                 cwd = tool_input.get("cwd")
                 env = tool_input.get("env")
-                return self.run_popen(cmd, shell=shell_flag, timeout=timeout, cwd=cwd, env=env)
+                stdin_data = tool_input.get("input")
+                if stdin_data is not None and not isinstance(stdin_data, str):
+                    stdin_data = str(stdin_data)
+                return self.run_popen(cmd, shell=shell_flag, timeout=timeout, cwd=cwd, env=env, stdin_data=stdin_data)
 
             if tool_name == "read_file":
                 filepath = tool_input["filepath"]
@@ -959,7 +1010,22 @@ class ToolExecutor:
                     cmd = ["pwn", "checksec", filepath]
                 else:
                     return "Neither `checksec` nor `pwn checksec` is available on this system."
-                return self.run_popen(cmd, shell=False, timeout=60)
+                result = self.run_popen(cmd, shell=False, timeout=60)
+                if "Traceback" in result or "ERROR" in result.upper():
+                    fallback_notes = []
+                    file_lower = filepath.lower()
+                    if file_lower.endswith((".exe", ".dll", ".msi", ".sys")):
+                        fallback_notes.append("checksec failed—PE/COFF binaries are not supported by the installed checksec/pwn checksec tooling.")
+                    else:
+                        fallback_notes.append("checksec failed while analysing this file.")
+                    fallback_notes.append(result.strip())
+                    if self._command_exists("diec"):
+                        die_output = self.run_popen(["diec", filepath], shell=False, timeout=60)
+                        fallback_notes.append("diec fallback output:\n" + die_output.strip())
+                    else:
+                        fallback_notes.append("Install Detective/Die (`diec`) for PE analysis or use `rabin2 -I <file>` as an alternative.")
+                    return "\n\n".join(fallback_notes)
+                return result
 
             if tool_name == "binwalk_scan":
                 filepath = tool_input["filepath"]
@@ -1334,6 +1400,40 @@ class BaseAgent:
             if orphan_ids:
                 self._remove_tool_results_by_ids(orphan_ids)
 
+    def _drop_oldest_message(self) -> bool:
+        """Remove the oldest non-system entry plus any dependent tool results."""
+        if not self.conversation_history:
+            return False
+
+        remove_index = 0
+        first_role = self.conversation_history[0].get("role")
+        if first_role == "system":
+            # Do not remove the system prompt or the most recent user request.
+            if len(self.conversation_history) <= 2:
+                return False
+            remove_index = 1
+        elif len(self.conversation_history) <= 1:
+            return False
+
+        removed = self.conversation_history.pop(remove_index)
+        orphan_ids = self._collect_tool_call_ids(removed)
+        if orphan_ids:
+            self._remove_tool_results_by_ids(orphan_ids)
+        return True
+
+    @staticmethod
+    def _is_context_length_error(error: Exception) -> bool:
+        """Detect whether an exception stems from exceeding the model context."""
+        message = str(error).lower()
+        keywords = (
+            "maximum context length",
+            "context length",
+            "context window",
+            "reduce the length",
+            "too many tokens",
+        )
+        return any(keyword in message for keyword in keywords)
+
     def chat(self, user_message: str, auto_execute: bool, inline_model: Optional[str] = None, 
              max_steps: int = DEFAULT_MAX_STEPS):
         raise NotImplementedError
@@ -1435,6 +1535,7 @@ class ClaudeAgent(BaseAgent):
                         "shell": {"type": "boolean", "description": "Run through shell (default true)"},
                         "cwd": {"type": "string", "description": "Working directory"},
                         "timeout": {"type": "integer", "minimum": 1},
+                        "input": {"type": "string", "description": "String to send to stdin"},
                         "env": {
                             "type": "object",
                             "description": "Environment variables",
@@ -1736,29 +1837,46 @@ class ClaudeAgent(BaseAgent):
             steps += 1
             model = self.pick_model(inline_model)
 
-            try:
-                self.total_api_requests += 1
-                thinking.start()
-                request_kwargs = {
-                    "model": model,
-                    "max_tokens": 4096,
-                    "tools": self.define_tools_schema(),
-                    "messages": self.conversation_history,
-                }
-                if self.system_prompt:
-                    request_kwargs["system"] = self.system_prompt
-                response = self.client.messages.create(
-                    **request_kwargs
-                )
-                thinking.stop()
-            except KeyboardInterrupt:
-                thinking.stop()
-                print(color("\n⚠ Request cancelled by user.\n", C.YELLOW))
-                self.conversation_history.append({"role": "user", "content": "[Request cancelled]"})
-                break
-            except Exception as e:
-                thinking.stop()
-                print(color(f"❌ API error: {e}", C.RED))
+            context_error = False
+            cancelled = False
+            context_retries = 0
+            response = None
+
+            while True:
+                try:
+                    self.total_api_requests += 1
+                    thinking.start()
+                    request_kwargs = {
+                        "model": model,
+                        "max_tokens": 4096,
+                        "tools": self.define_tools_schema(),
+                        "messages": self.conversation_history,
+                    }
+                    if self.system_prompt:
+                        request_kwargs["system"] = self.system_prompt
+                    response = self.client.messages.create(
+                        **request_kwargs
+                    )
+                    thinking.stop()
+                    break
+                except KeyboardInterrupt:
+                    thinking.stop()
+                    print(color("\n⚠ Request cancelled by user.\n", C.YELLOW))
+                    self.conversation_history.append({"role": "user", "content": "[Request cancelled]"})
+                    cancelled = True
+                    break
+                except Exception as e:
+                    thinking.stop()
+                    if self._is_context_length_error(e) and self._drop_oldest_message():
+                        context_retries += 1
+                        if context_retries <= self.max_history:
+                            print(color("⚠ Context window exceeded. Dropped the oldest exchange and retrying...", C.YELLOW))
+                            continue
+                    print(color(f"❌ API error: {e}", C.RED))
+                    context_error = True
+                    break
+
+            if cancelled or context_error:
                 break
 
             blocks = list(response.content) if hasattr(response, 'content') else []
@@ -1772,6 +1890,10 @@ class ClaudeAgent(BaseAgent):
                 text = " ".join(text_blocks).strip()
                 model_display = self.get_model_display_name(model)
                 print(color(f"\n🤖 Claude", C.PURPLE + C.BOLD) + color(f" [{model_display}]", C.PURPLE) + color(": ", C.RESET) + highlight_flags(text))
+                if contains_confident_flag(strip_ansi(text)):
+                    print(color("🎉 Flag detected in assistant response. Halting further automated steps.", C.GREEN + C.BOLD))
+                    print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
+                    return
 
             if tool_uses:
                 for t in tool_uses:
@@ -1794,6 +1916,11 @@ class ClaudeAgent(BaseAgent):
                                       "content": [{"type": "text", "text": result}]}
                     self.conversation_history.append({"role": "user", "content": [tool_result_obj]})
                     self.truncate_history()
+
+                    if contains_confident_flag(result):
+                        print(color("🎉 Flag detected. Halting further automated steps to prevent redundant work.", C.GREEN + C.BOLD))
+                        print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
+                        return
                 continue
 
             print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
@@ -1818,7 +1945,7 @@ class OpenAIAgent(BaseAgent):
         self.client = openai.OpenAI(api_key=api_key)
         self.model_light = GPT35_TURBO
         self.model_medium = GPT4O_MINI
-        self.model_heavy = GPT4
+        self.model_heavy = GPT4O
 
     def define_tools_schema(self):
         return [
@@ -1830,11 +1957,12 @@ class OpenAIAgent(BaseAgent):
                     "parameters": {
                         "type": "object",
                         "properties": {
-                            "command": {"type": "string", "description": "Shell command to execute"},
-                            "shell": {"type": "boolean", "description": "Run through shell (default true)"},
-                            "cwd": {"type": "string", "description": "Working directory"},
-                            "timeout": {"type": "integer", "minimum": 1, "description": "Timeout in seconds"},
-                            "env": {
+                        "command": {"type": "string", "description": "Shell command to execute"},
+                        "shell": {"type": "boolean", "description": "Run through shell (default true)"},
+                        "cwd": {"type": "string", "description": "Working directory"},
+                        "input": {"type": "string", "description": "String to send to stdin"},
+                        "timeout": {"type": "integer", "minimum": 1, "description": "Timeout in seconds"},
+                        "env": {
                                 "type": "object",
                                 "description": "Environment variables",
                                 "additionalProperties": {"type": "string"}
@@ -2176,7 +2304,7 @@ class OpenAIAgent(BaseAgent):
         elif "gpt-4-turbo" in model_lower:
             return "gpt-4 turbo"
         elif "gpt-4" in model_lower:
-            return "gpt-4"
+            return "gpt-4 (legacy)"
         elif "gpt-3.5" in model_lower:
             return "gpt-3.5"
         return model  # fallback to full name
@@ -2198,24 +2326,41 @@ class OpenAIAgent(BaseAgent):
             steps += 1
             model = self.pick_model(inline_model)
 
-            try:
-                self.total_api_requests += 1
-                thinking.start()
-                response = self.client.chat.completions.create(
-                    model=model,
-                    messages=self.conversation_history,
-                    tools=self.define_tools_schema(),
-                    tool_choice="auto"
-                )
-                thinking.stop()
-            except KeyboardInterrupt:
-                thinking.stop()
-                print(color("\n⚠ Request cancelled by user.\n", C.YELLOW))
-                self.conversation_history.append({"role": "user", "content": "[Request cancelled]"})
-                break
-            except Exception as e:
-                thinking.stop()
-                print(color(f"❌ API error: {e}", C.RED))
+            context_error = False
+            cancelled = False
+            context_retries = 0
+            response = None
+
+            while True:
+                try:
+                    self.total_api_requests += 1
+                    thinking.start()
+                    response = self.client.chat.completions.create(
+                        model=model,
+                        messages=self.conversation_history,
+                        tools=self.define_tools_schema(),
+                        tool_choice="auto"
+                    )
+                    thinking.stop()
+                    break
+                except KeyboardInterrupt:
+                    thinking.stop()
+                    print(color("\n⚠ Request cancelled by user.\n", C.YELLOW))
+                    self.conversation_history.append({"role": "user", "content": "[Request cancelled]"})
+                    cancelled = True
+                    break
+                except Exception as e:
+                    thinking.stop()
+                    if self._is_context_length_error(e) and self._drop_oldest_message():
+                        context_retries += 1
+                        if context_retries <= self.max_history:
+                            print(color("⚠ Context window exceeded. Dropped the oldest exchange and retrying...", C.YELLOW))
+                            continue
+                    print(color(f"❌ API error: {e}", C.RED))
+                    context_error = True
+                    break
+
+            if cancelled or context_error:
                 break
 
             message = response.choices[0].message
@@ -2234,6 +2379,10 @@ class OpenAIAgent(BaseAgent):
             if message.content:
                 model_display = self.get_model_display_name(model)
                 print(color(f"\n🤖 ChatGPT", C.PURPLE + C.BOLD) + color(f" [{model_display}]", C.PURPLE) + color(": ", C.RESET) + highlight_flags(message.content))
+                if contains_confident_flag(strip_ansi(message.content)):
+                    print(color("🎉 Flag detected in assistant response. Halting further automated steps.", C.GREEN + C.BOLD))
+                    print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
+                    return None
             elif message.tool_calls:
                 # If no text but has tool calls, print a blank line for spacing
                 print()
@@ -2273,6 +2422,11 @@ class OpenAIAgent(BaseAgent):
                         "content": result
                     })
                     self.truncate_history()
+
+                    if contains_confident_flag(result):
+                        print(color("🎉 Flag detected. Halting further automated steps to prevent redundant work.", C.GREEN + C.BOLD))
+                        print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
+                        return None
                 continue
 
             print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
@@ -2398,8 +2552,8 @@ def print_banner(api_provider: str, default_auto_exec: bool, default_max_steps: 
         ]
     else:
         models = [
-            ("GPT-4", "(Heavy)"),
-            ("GPT-4o", "(Alt Heavy)"),
+            ("GPT-4o", "(Heavy)"),
+            ("GPT-4", "(Legacy Heavy)"),
             ("GPT-4o Mini", "(Medium)"),
             ("GPT-3.5 Turbo", "(Light)"),
         ]
@@ -2621,8 +2775,8 @@ Required (based on API choice):
   OPENAI_API_KEY         For ChatGPT API access
 
 Setup:
-  export ANTHROPIC_API_KEY="sk-ant-api03-..."
-  export OPENAI_API_KEY="sk-..."
+  export ANTHROPIC_API_KEY="..."
+  export OPENAI_API_KEY="..."
 
 You only need the key for the API you intend to use.
 
@@ -2696,7 +2850,7 @@ The AI will automatically choose and execute tools based on your requests.
         # Set generic aliases to OpenAI models
         MODEL_ALIASES["light"] = GPT35_TURBO
         MODEL_ALIASES["medium"] = GPT4O_MINI
-        MODEL_ALIASES["heavy"] = GPT4
+        MODEL_ALIASES["heavy"] = GPT4O
 
     setup_readline()
     print_banner(api_provider, default_auto_exec, default_max_steps, max_history)
