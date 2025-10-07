@@ -445,22 +445,6 @@ END
 
 ---
 
-## 🤝 Contributing
-
-Contributions welcome! Areas of interest:
-- Additional CTF tools integration
-- Model provider support (Gemini, Mistral, etc.)
-- Enhanced stealth/evasion techniques
-- Web UI frontend
-
----
-
-## 📜 License
-
-MIT License - See [LICENSE](LICENSE) for details
-
----
-
 ## ⚠️ Disclaimer
 
 This tool is designed for **authorized security testing and CTF competitions only**. 
@@ -490,6 +474,21 @@ This tool is designed for **authorized security testing and CTF competitions onl
 - OpenAI for GPT models
 - The CTF community for inspiration
 - Kali Linux team for the tooling ecosystem
+
+---
+## 🤝 Contributing
+
+Contributions welcome! Areas of interest:
+- Additional CTF tools integration
+- Model provider support (Gemini, Mistral, etc.)
+- Enhanced stealth/evasion techniques
+- Web UI frontend
+
+---
+
+## 📜 License
+
+MIT License - See [LICENSE](LICENSE) for details
 
 ---
 
