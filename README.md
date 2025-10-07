@@ -62,8 +62,8 @@ python3 -m venv venv && source venv/bin/activate
 pip install anthropic openai requests
 
 # Configure API keys
-export ANTHROPIC_API_KEY="sk-ant-api03-..."
-export OPENAI_API_KEY="sk-..."
+export ANTHROPIC_API_KEY="..."
+export OPENAI_API_KEY="..."
 
 # Launch
 python3 operatives.py
@@ -73,15 +73,10 @@ python3 operatives.py
 <summary><b>🔐 Persistent API Key Setup</b></summary>
 
 ```bash
-# For Zsh
-echo 'export ANTHROPIC_API_KEY="sk-ant-api03-..."' >> ~/.zshrc
-echo 'export OPENAI_API_KEY="sk-..."' >> ~/.zshrc
+# For ~/.zshrc or ~/.bashrc
+echo 'export ANTHROPIC_API_KEY="-..."' >> ~/.zshrc
+echo 'export OPENAI_API_KEY="..."' >> ~/.zshrc
 source ~/.zshrc
-
-# For Bash
-echo 'export ANTHROPIC_API_KEY="sk-ant-api03-..."' >> ~/.bashrc
-echo 'export OPENAI_API_KEY="sk-..."' >> ~/.bashrc
-source ~/.bashrc
 ```
 </details>
 
