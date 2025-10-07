@@ -245,30 +245,6 @@ python3 operatives.py --max-steps=25
   .git                    [Status: 301, Size: 89] (git leak detected, nice find)
 ```
 
-### Example 4: Steganography (Hidden Message Hunt)
-```bash
-👾 Operator [root]: Check if there's hidden data in image.jpg
-
-🤖 Claude [sonnet 4.5]: I'll analyze the image metadata and attempt stego extraction. 
-Let's see what secrets are hiding fr fr.
-
-🔧 Tool: [exiftool_scan] image.jpg
-✅ Result:
-  File Type: JPEG
-  Comment: Something hidden here... (sus vibes detected)
-
-🔧 Tool: [stegseek_crack] image.jpg
-✅ Result:
-  [i] Found passphrase: "password123" (respectfully cracked)
-  Recovered data saved to: image.jpg.out
-  
-Nice find! Hidden data extracted successfully.
-
-🔧 Tool: [read_file] image.jpg.out (mode: text)
-✅ Result:
-  flag{st3g0_m4st3r_2024}
-```
-
 ---
 
 ## 🎨 Multi-Line Paste Mode
@@ -290,26 +266,6 @@ END
 This prevents the terminal from treating each line as a separate command. Fr fr, this saves you from so much pain.
 
 ---
-
-## 🔥 Advanced Features (The Cool Stuff)
-
-### 🧠 **Intelligent System Prompts**
-- Specialized CTF reasoning built-in (helpful for faster problem solving fr)
-- Auto-suggests next investigation steps (like a bestie who actually helps)
-- Prefers helper scripts over brittle one-liners (respectfully avoiding bash spaghetti)
-
-### 🐍 **Auto Python Script Wrapping**
-Automatically converts fragile `python -c` commands into temporary scripts (no more broken pipes bestie):
-```python
-# Before: python -c "long\nmultiline\ncode"  ❌ Breaks (gets messy)
-# After: python /tmp/operative_xxx.py  ✅ Works (much cleaner)
-```
-
-### 🌐 **HTTP Session Management**
-- Persistent cookies across requests (keeping your session alive fr fr)
-- Automatic redirect following (no escape routes)
-- JSON/form data support (speaks all dialects)
-- Response body auto-saving (never losing the receipts)
 
 ### 📦 **Smart Archive Handling**
 Auto-detects and extracts: `.zip`, `.tar`, `.tar.gz`, `.tgz`, `.gz` (unboxing moment every time)
