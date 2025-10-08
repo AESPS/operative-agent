@@ -102,7 +102,7 @@ source ~/.zshrc
 >
 > - **Ctrl + C** → cancel current command (Windows/Linux)  
 > - **Command + C** → cancel on macOS  
-> - **Ctrl + Z** → pause the process (sends it to background)  
+> - **Ctrl + Z** → exit i think lol  
 > - **Command + Z** → same deal for macOS users  
 
 ### Basic Commands
