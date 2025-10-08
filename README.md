@@ -8,7 +8,7 @@
 
 **Built for those late-night CTF arcs when caffeine hits harder than rate limits — stay locked in, no cap.** 🔥
 
-*(Update: Added new guardrails, instructions, and gave the agent some rizz — it’s got personality now fr fr. [See Persona List →](#-persona-modes))*
+*(Update: Added new guardrails, instructions, and gave the agent some rizz — [See Persona List →](#-persona-modes))*
 
 
 
