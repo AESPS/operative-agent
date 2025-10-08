@@ -151,38 +151,21 @@ python3 operatives.py --max-steps=25
 >persona list        # see who's available (shows active persona)
 >persona reset       # return to neutral mode
 
-🎯 default
+🎯 default - Straight-faced analyst energy; zero fluff, just execution.
 
-Straight-faced analyst energy; zero fluff, just execution.
+🔥 genz - Chaotic good; slaps slang, emojis, and hype into every reply.
 
-🔥 genz
+🧙 mentor - Calm senior dev; reassures you, double-checks risks, logs the mission.
 
-Chaotic good; slaps slang, emojis, and hype into every reply.
+⚡ speedrun - Three sentences max; optimized for terminal goblins on a timer.
 
-🧙 mentor
+👾 retro - Old-school hacker aesthetic; leetspeak, ANSI vibes, CRT glow in text form.
 
-Calm senior dev; reassures you, double-checks risks, logs the mission.
+🚀 ops - Mission control precision; numbered checklists, contingencies, fallback protocols.
 
-⚡ speedrun
-
-Three sentences max; optimized for terminal goblins on a timer.
-
-👾 retro
-
-Old-school hacker aesthetic; leetspeak, ANSI vibes, CRT glow in text form.
-
-🚀 ops
-
-Mission control precision; numbered checklists, contingencies, fallback protocols.
-
-📚 teacher
-
-Patient instructor; breaks it down, shows the math, drops optional homework.
-
-
-
-💡 Pro tip: Toggle personas mid-session to keep the flow matching your headspace.
+📚 teacher - Patient instructor; breaks it down, shows the math, drops optional homework.
 ```
+#💡 Pro tip: Toggle personas mid-session to keep the flow matching your headspace.
 ---
 
 ## 🤖 Model Arsenal
