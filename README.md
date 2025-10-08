@@ -159,18 +159,9 @@ Each persona changes how Operative talks, thinks, and hypes you up:
 🎯 ops	Tactical precision	Mission control voice — numbered steps, contingencies, clean discipline.
 🍎 teacher	Encouraging sensei	Explains reasoning, drops examples, gives homework like “try this next.”
 
-🔗 Wanna see them all in action?
-Check out the full Persona List →
-
-yaml
-Copy code
-
 ---
-
-And update the note near the top of your README to link cleanly:
-
 ```
-*(Update: Agent’s got rizz — new **Persona System** unlocked. [Meet the cast →](#-persona-modes))* 
+
 ---
 
 ## 🤖 Model Arsenal
