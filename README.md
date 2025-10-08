@@ -376,7 +376,7 @@ END
 
 ## ⚠️ Disclaimer (Legal Stuff, Respectfully)
 
-This tool is designed for **authorized security testing and CTF competitions only**. 
+This tool is designed for **authorized labs and CTF only** ion en curr fr. 
 
 - ✅ Educational purposes in controlled environments (learning is based)
 - ✅ CTF competitions and wargames (aura farming territory)
