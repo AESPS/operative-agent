@@ -127,7 +127,7 @@ python3 operatives.py --max-history=40
 python3 operatives.py --max-steps=25
 ```
 
-### In-Session Controls
+## In-Session Controls
 
 | Command | Description | Aliases |
 |---------|-------------|---------|
@@ -138,7 +138,7 @@ python3 operatives.py --max-steps=25
 | `:help` | Display help | `help`, `-h`, `--help` |
 | `quit` | Exit agent | `exit`, `q` |
 
-### 🎭 Persona Modes
+## 🎭 Persona Modes
 
 
 **Switch up the vibe on the fly to match your workflow.**
@@ -147,7 +147,7 @@ python3 operatives.py --max-steps=25
 >persona list        # see who's available (shows active persona)
 >persona reset       # return to neutral mode
 ```
-## Available Personas
+### Available Personas
 
 | Persona | Description |
 |---------|-------------|
