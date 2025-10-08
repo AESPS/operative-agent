@@ -15,6 +15,8 @@
 *Operative is your AI teammate that doesn't sleep, forget, or ghost you mid-debug.*  
 *A helpful tool that makes CTF challenges a bit less painful fr fr.* 🔥
 
+** Added more guardrailes and instructions, beware of auto-execute flag
+
 [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Tools](#-agent-managed-toolset) • [Examples](#-attack-chain-examples)
 
 </div>
