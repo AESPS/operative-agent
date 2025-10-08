@@ -39,11 +39,10 @@
 
 ## 🤘 Quick Vibes: Why You'll Love It
 
-- Feels like having a hacker buddy that *actually listens* rare find fr.  
+- Feels like having a support-main buddy that actually listens — doesn’t just KS, just heals. Rare find fr fr✨
 - Doesn't ask "did you try nmap yet?" — it just does it.  
 - Never complains about your spaghetti payloads.  
-- Built to handle chaos, caffeine, and CTF pressure all at once.  
-- A genuinely helpful tool that makes the grind a bit easier. 🔥  
+- Probably a helpful tool that makes the grind a bit easier. 🔥
 
 ---
 
