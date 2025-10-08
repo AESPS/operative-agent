@@ -71,7 +71,7 @@ cd operative-agent
 python3 -m venv venv && source venv/bin/activate
 pip install anthropic openai requests
 
-# Set your API keys (don't skip this, no cap)
+# Set keys (temporary like your situationship 💀)
 export ANTHROPIC_API_KEY="..."
 export OPENAI_API_KEY="..."
 
@@ -83,7 +83,7 @@ python3 operatives.py
 <summary><b>🔐 Persistent API Setup (so you don't keep typing like an NPC)</b></summary>
 
 ```bash
-# For ~/.zshrc or ~/.bashrc
+# For ~/.zshrc or ~/.bashrc run it outside the env
 echo 'export ANTHROPIC_API_KEY="..."' >> ~/.zshrc
 echo 'export OPENAI_API_KEY="..."' >> ~/.zshrc
 source ~/.zshrc
