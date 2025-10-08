@@ -15,7 +15,6 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Anthropic Claude](https://img.shields.io/badge/Anthropic-Claude-orange.svg)](https://www.anthropic.com/)
 [![OpenAI GPT](https://img.shields.io/badge/OpenAI-GPT-purple.svg)](https://openai.com/)
-[![Persona System](https://img.shields.io/badge/🧠_Persona_System-Rizz_Activated-ff69b4.svg?style=for-the-badge)](#-persona-modes)
 
 
 [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Tools](#-agent-managed-toolset) • [Examples](#-attack-chain-examples)
@@ -140,7 +139,38 @@ python3 operatives.py --max-steps=25
 | `:help` | Display help | `help`, `-h`, `--help` |
 | `quit` | Exit agent | `exit`, `q` |
 
+## 🎭 Persona Modes
 
+Switch up the agent’s entire vibe mid-session —  
+because sometimes you need a mentor, and sometimes you need a menace 😤  
+
+```bash
+> persona <name>
+> persona list
+> persona reset
+Each persona changes how Operative talks, thinks, and hypes you up:
+
+🧩 Persona	💫 Vibe Check	🧠 Description
+🧠 default	Neutral core	Straight-shooting analyst mode. Zero fluff, all focus.
+😎 genz	Chaos unlocked	Full meme dialect, energy drink in hand, drops “no cap” mid-exploit.
+🧓 mentor	Calm & wise	Senior analyst energy — explains every move, keeps receipts, writes the report.
+⚡ speedrun	Go-fast mode	Minimal words. Max commands. Designed for brain-off speed.
+💾 retro	Hacker nostalgia	90s terminal aesthetic — leet vibes with modern precision.
+🎯 ops	Tactical precision	Mission control voice — numbered steps, contingencies, clean discipline.
+🍎 teacher	Encouraging sensei	Explains reasoning, drops examples, gives homework like “try this next.”
+
+🔗 Wanna see them all in action?
+Check out the full Persona List →
+
+yaml
+Copy code
+
+---
+
+And update the note near the top of your README to link cleanly:
+
+```markdown
+*(Update: Agent’s got rizz — new **Persona System** unlocked. [Meet the cast →](#-persona-modes))* 
 ---
 
 ## 🤖 Model Arsenal
