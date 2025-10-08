@@ -8,7 +8,8 @@
 
 **Built for those late-night CTF arcs when caffeine hits harder than rate limits — stay locked in, no cap.** 🔥
 
-*(Update: Added new guardrails, instructions, and gave the agent some rizz — it’s got personality now fr fr. [See Persona List →](#-persona-modes))*
+*(Update: Added new guardrails, instructions, and gave the agent some rizz — it’s got personality now fr fr. [See Persona List →](#-persona-modes-swap-your-vibe-mid-run)
+
 
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
