@@ -2011,14 +2011,13 @@ class ClaudeAgent(BaseAgent):
             tool_uses = [b for b in blocks if getattr(b, 'type', None) == 'tool_use']
             text_blocks = [getattr(b, 'text', '') for b in blocks if getattr(b, 'type', None) == 'text']
 
+            flag_detected_in_text = False
             if text_blocks:
                 text = " ".join(text_blocks).strip()
                 model_display = self.get_model_display_name(model)
                 print(color(f"\n🤖 Claude", C.PURPLE + C.BOLD) + color(f" [{model_display}]", C.PURPLE) + color(": ", C.RESET) + highlight_flags(text))
                 if contains_confident_flag(strip_ansi(text)):
-                    print(color("🎉 Flag detected in assistant response. Halting further automated steps.", C.GREEN + C.BOLD))
-                    print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
-                    return
+                    flag_detected_in_text = True
 
             if tool_uses:
                 for t in tool_uses:
@@ -2029,7 +2028,10 @@ class ClaudeAgent(BaseAgent):
 
                     print_tool_call(t_name, t_input)
 
-                    result = self._execute_tool_with_confirm(t_name, t_input, auto_execute)
+                    if flag_detected_in_text:
+                        result = "Tool execution skipped because a confident flag was already detected in the assistant response."
+                    else:
+                        result = self._execute_tool_with_confirm(t_name, t_input, auto_execute)
 
                     tool_result_obj = {"type": "tool_result", "tool_use_id": t_id,
                                       "content": [{"type": "text", "text": result}]}
@@ -2050,7 +2052,16 @@ class ClaudeAgent(BaseAgent):
                         print(color("🎉 Flag detected. Halting further automated steps to prevent redundant work.", C.GREEN + C.BOLD))
                         print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
                         return
+                if flag_detected_in_text:
+                    print(color("🎉 Flag detected in assistant response. Halting further automated steps.", C.GREEN + C.BOLD))
+                    print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
+                    return
                 continue
+
+            if flag_detected_in_text:
+                print(color("🎉 Flag detected in assistant response. Halting further automated steps.", C.GREEN + C.BOLD))
+                print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
+                return
 
             print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
             break
@@ -2534,13 +2545,12 @@ class OpenAIAgent(BaseAgent):
             self.truncate_history()
 
             # Always show text content first if present, OR show generic message if going straight to tools
+            flag_detected_in_text = False
             if message.content:
                 model_display = self.get_model_display_name(model)
                 print(color(f"\n🤖 ChatGPT", C.PURPLE + C.BOLD) + color(f" [{model_display}]", C.PURPLE) + color(": ", C.RESET) + highlight_flags(message.content))
                 if contains_confident_flag(strip_ansi(message.content)):
-                    print(color("🎉 Flag detected in assistant response. Halting further automated steps.", C.GREEN + C.BOLD))
-                    print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
-                    return None
+                    flag_detected_in_text = True
             elif message.tool_calls:
                 # If no text but has tool calls, print a blank line for spacing
                 print()
@@ -2565,7 +2575,10 @@ class OpenAIAgent(BaseAgent):
 
                     print_tool_call(func_name, func_args)
 
-                    result = self._execute_tool_with_confirm(func_name, func_args, auto_execute)
+                    if flag_detected_in_text:
+                        result = "Tool execution skipped because a confident flag was already detected in the assistant response."
+                    else:
+                        result = self._execute_tool_with_confirm(func_name, func_args, auto_execute)
 
                     self.conversation_history.append({
                         "role": "tool",
@@ -2589,7 +2602,16 @@ class OpenAIAgent(BaseAgent):
                         print(color("🎉 Flag detected. Halting further automated steps to prevent redundant work.", C.GREEN + C.BOLD))
                         print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
                         return None
+                if flag_detected_in_text:
+                    print(color("🎉 Flag detected in assistant response. Halting further automated steps.", C.GREEN + C.BOLD))
+                    print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
+                    return None
                 continue
+
+            if flag_detected_in_text:
+                print(color("🎉 Flag detected in assistant response. Halting further automated steps.", C.GREEN + C.BOLD))
+                print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
+                return None
 
             print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
             break
