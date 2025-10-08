@@ -97,8 +97,13 @@ source ~/.zshrc
 
 ## 💻 Usage
 
-# NOTE: By Default AUTO-EXECUTE IS ON! 
-If something bad happend 😂 cancel any running process with control + C or Command + C
+# ⚠️ **Heads up — Auto-Execute is ON by default!**  
+> If things start acting sus 😂, you can stop the current process anytime:
+>
+> - **Ctrl + C** → cancel current command (Windows/Linux)  
+> - **Command + C** → cancel on macOS  
+> - **Ctrl + Z** → pause the process (sends it to background)  
+> - **Command + Z** → same deal for macOS users  
 
 ### Basic Commands
 
