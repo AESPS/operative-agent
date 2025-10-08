@@ -142,9 +142,6 @@ python3 operatives.py --max-steps=25
 
 ### 🎭 Persona Modes (Swap Your Vibe Mid-Run)
 
-```bash
-# 🎭 Personas
-
 **Switch up the vibe on the fly to match your workflow.**
 ```bash
 >persona <name>      # switch energy instantly
