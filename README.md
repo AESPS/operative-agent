@@ -4,8 +4,6 @@
 
 ![Operative](./assets/operative_header.svg)
 
-**Autonomous, chaos-tolerant, AI-powered CTF sidekick with main-character energy.**
-
 **Built for those late-night CTF arcs when caffeine hits harder than rate limits — stay locked in, no cap.** 🔥
 
 *(Update: Added new guardrails, instructions, and gave the agent some rizz — [See Persona List →](#-persona-modes))*
@@ -140,7 +138,7 @@ python3 operatives.py --max-steps=25
 | `:help` | Display help | `help`, `-h`, `--help` |
 | `quit` | Exit agent | `exit`, `q` |
 
-### 🎭 Persona Modes (Swap Your Vibe Mid-Run)
+### 🎭 Persona Modes
 
 
 **Switch up the vibe on the fly to match your workflow.**
