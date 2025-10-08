@@ -143,20 +143,46 @@ python3 operatives.py --max-steps=25
 ### 🎭 Persona Modes (Swap Your Vibe Mid-Run)
 
 ```bash
+# 🎭 Personas
+
+**Switch up the vibe on the fly to match your workflow.**
+```bash
 >persona <name>      # switch energy instantly
->persona list        # recap who's available (marks the active one)
->persona reset       # go back to neutral vibes
-Pick your flavor:
+>persona list        # see who's available (shows active persona)
+>persona reset       # return to neutral mode
 
-default – straight-faced analyst energy; zero fluff, just execution.
-genz – chaotic good; slaps slang, emojis, and hype into every reply.
-mentor – calm senior dev; reassures you, double-checks risks, logs the mission.
-speedrun – three sentences max; optimized for terminal goblins on a timer.
-retro – BBS-core hacker; leetspeak, ANSI vibes, CRT glow in text form.
-ops – NASA mission control; numbered checklists, contingencies, fallback calls.
-teacher – patient instructor; breaks it down, shows the math, drops optional homework.
-Tip: toggle personas as you chain commands to keep the flow matching your headspace.
+🎯 default
 
+Straight-faced analyst energy; zero fluff, just execution.
+
+🔥 genz
+
+Chaotic good; slaps slang, emojis, and hype into every reply.
+
+🧙 mentor
+
+Calm senior dev; reassures you, double-checks risks, logs the mission.
+
+⚡ speedrun
+
+Three sentences max; optimized for terminal goblins on a timer.
+
+👾 retro
+
+Old-school hacker aesthetic; leetspeak, ANSI vibes, CRT glow in text form.
+
+🚀 ops
+
+Mission control precision; numbered checklists, contingencies, fallback protocols.
+
+📚 teacher
+
+Patient instructor; breaks it down, shows the math, drops optional homework.
+
+
+
+💡 Pro tip: Toggle personas mid-session to keep the flow matching your headspace.
+```
 ---
 
 ## 🤖 Model Arsenal
