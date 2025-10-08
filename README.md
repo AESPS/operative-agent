@@ -139,6 +139,22 @@ python3 operatives.py --max-steps=25
 | `:help` | Display help | `help`, `-h`, `--help` |
 | `quit` | Exit agent | `exit`, `q` |
 
+### 🎭 Persona Modes (Swap Your Vibe Mid-Run)
+
+```bash
+>persona <name>      # switch energy instantly
+>persona list        # recap who's available (marks the active one)
+>persona reset       # go back to neutral vibes
+Pick your flavor:
+
+default – straight-faced analyst energy; zero fluff, just execution.
+genz – chaotic good; slaps slang, emojis, and hype into every reply.
+mentor – calm senior dev; reassures you, double-checks risks, logs the mission.
+speedrun – three sentences max; optimized for terminal goblins on a timer.
+retro – BBS-core hacker; leetspeak, ANSI vibes, CRT glow in text form.
+ops – NASA mission control; numbered checklists, contingencies, fallback calls.
+teacher – patient instructor; breaks it down, shows the math, drops optional homework.
+Tip: toggle personas as you chain commands to keep the flow matching your headspace.
 
 ---
 
