@@ -26,7 +26,7 @@
 - 🧰 **All-in-One Toolkit** — nmap · ffuf · binwalk · exiftool · stegseek · strings · http utils · and more  
 - 💾 **Auto-Save** — no more "where did that dump go," it's chillin' in `/tmp/`  
 - ⚙️ **Execution Control** — full-auto when you're in flow, manual when you're crashing out  
-- 📦 **Session Recall** — keeps track of your messy grind like a loyal homie  
+- 📦 **Session Recall** — Keeps track of your messy lab so you don't lose your loot no cap og.  
 - 💸 **Reality Check** — APIs cost slaps 💀 RIP $5 credits — that's five nasi katok meals gone 😭
 - 🚧 **Beta energy** — expect some bugs — that's just ✨ a feature ✨  
 
