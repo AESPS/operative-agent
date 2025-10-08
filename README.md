@@ -8,6 +8,9 @@
 
 *Built for those late-night CTF arcs when caffeine hits harder than rate limits — stay locked in, no cap.* 🔥
 
+*(Update: built new guardrails, cleaner flow, and gave the agent some rizz — it’s got moods now fr fr. [See Persona List →](#-persona-list))*
+
+
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Anthropic Claude](https://img.shields.io/badge/Anthropic-Claude-orange.svg)](https://www.anthropic.com/)
