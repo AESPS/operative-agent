@@ -1384,6 +1384,29 @@ class BaseAgent:
         self.tool_executor = ToolExecutor()
         self.system_prompt = system_prompt
         self._system_message_inserted = False
+        self.system_delivery = "message"  # message | parameter | prepend
+        self._system_prompt_prefix: Optional[str] = None
+        self._system_prompt_consumed = False
+
+    def ensure_system_prompt(self) -> None:
+        """Insert the system prompt into the conversation once."""
+        if self.system_prompt and not self._system_message_inserted:
+            if self.system_delivery == "message":
+                self.conversation_history.insert(0, {"role": "system", "content": self.system_prompt})
+            elif self.system_delivery == "prepend":
+                self._system_prompt_prefix = self.system_prompt
+            self._system_message_inserted = True
+
+    def prepare_user_message(self, user_message: str) -> str:
+        """Attach system guidance to the first user message if the provider lacks system-role support."""
+        if self.system_delivery == "prepend" and self._system_prompt_prefix and not self._system_prompt_consumed:
+            self._system_prompt_consumed = True
+            prefix = self._system_prompt_prefix.strip()
+            self._system_prompt_prefix = None
+            if not prefix:
+                return user_message
+            return f"{prefix}\n\n{user_message}"
+        return user_message
 
     def define_tools_schema(self):
         """Return tools in provider-specific format"""
@@ -1520,8 +1543,7 @@ class ClaudeAgent(BaseAgent):
         self.model_light = CLAUDE_HAIKU
         self.model_medium = CLAUDE_SONNET
         self.model_heavy = CLAUDE_OPUS
-        if self.system_prompt:
-            self._system_message_inserted = True
+        self.system_delivery = "parameter"
 
     def define_tools_schema(self):
         return [
@@ -1819,9 +1841,8 @@ class ClaudeAgent(BaseAgent):
 
     def chat(self, user_message: str, auto_execute: bool, inline_model: Optional[str] = None, 
              max_steps: int = DEFAULT_MAX_STEPS):
-        if self.system_prompt and not self._system_message_inserted:
-            self.conversation_history.insert(0, {"role": "system", "content": self.system_prompt})
-            self._system_message_inserted = True
+        self.ensure_system_prompt()
+        user_message = self.prepare_user_message(user_message)
         # Add session context if files exist
         session_context = self.tool_executor.get_session_context()
         if session_context:
@@ -1852,7 +1873,7 @@ class ClaudeAgent(BaseAgent):
                         "tools": self.define_tools_schema(),
                         "messages": self.conversation_history,
                     }
-                    if self.system_prompt:
+                    if self.system_delivery == "parameter" and self.system_prompt:
                         request_kwargs["system"] = self.system_prompt
                     response = self.client.messages.create(
                         **request_kwargs
@@ -1946,6 +1967,7 @@ class OpenAIAgent(BaseAgent):
         self.model_light = GPT35_TURBO
         self.model_medium = GPT4O_MINI
         self.model_heavy = GPT4O
+        self.system_delivery = "prepend"
 
     def define_tools_schema(self):
         return [
@@ -2311,6 +2333,8 @@ class OpenAIAgent(BaseAgent):
 
     def chat(self, user_message: str, auto_execute: bool, inline_model: Optional[str] = None, 
              max_steps: int = DEFAULT_MAX_STEPS):
+        self.ensure_system_prompt()
+        user_message = self.prepare_user_message(user_message)
         # Add session context if files exist
         session_context = self.tool_executor.get_session_context()
         if session_context:
@@ -2885,6 +2909,8 @@ The AI will automatically choose and execute tools based on your requests.
             if raw_strip.lower() in (":reset", "reset", "clear-history"):
                 agent.conversation_history = []
                 agent._system_message_inserted = False
+                agent._system_prompt_consumed = False
+                agent._system_prompt_prefix = None
                 print(color("⚡ History cleared", C.YELLOW))
                 continue
 
