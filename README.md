@@ -38,7 +38,7 @@
 - Runs full-lock-in mode when you're too cooked to think  
 - Never ghosts mid-debug — this agent's based fr  
 - Sometimes just finds the flag — call it **mythical pull** energy ✨  
-- Makes CTF pain kinda fun, no cap 🔥  
+- Probably a helpful tool that makes the grind a bit easier. 🔥  
 
 ---
 
