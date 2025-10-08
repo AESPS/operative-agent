@@ -169,7 +169,7 @@ Copy code
 
 And update the note near the top of your README to link cleanly:
 
-```markdown
+```
 *(Update: Agent’s got rizz — new **Persona System** unlocked. [Meet the cast →](#-persona-modes))* 
 ---
 
