@@ -320,7 +320,7 @@ sudo apt install -y exiftool binwalk stegseek ffuf whatweb
 
 This project is for **authorized labs and CTF** — we're not villains, no cap.
 
-- ✅ Training, education, and ethical hacking
+- ✅ Training and education
 - ✅ CTF comps, security demos
 - ❌ Unlawful access or mischief
 - ❌ Using this on prod (that's mid behavior)
