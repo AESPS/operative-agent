@@ -352,13 +352,26 @@ This project is for **authorized labs and CTF** — we're not villains, no cap.
 
 ---
 
-## 💭 Notes
+## ⚠️ Important Notes and 💭 Real Talk
 
-- AI might hallucinate, crash out, or cap — always verify outputs.
-- Operative automates grunt work so you can stay locked in on real analysis.
-- Claude Opus = reasoning GOAT; GPT-4o Mini = quick sidekick.
-- Real talk: it won't carry you, but it'll save you time.
+This AI-powered CTF agent slaps, but let's keep it 💯 about limitations:
 
+### AI Limitations (The Reality Check)
+- **Not perfect**: AI can cap or hallucinate. Always verify outputs before trusting them, unc.
+- **Sidekick, not carry**: Handles boring tasks but won't replace your skills. You're still the main character.
+- **Performance varies**: Goes crazy on forensics, crypto, and basic web. Complex pwn or reversing? It might crash out.
+- **Misses obvious Ls**: Sometimes overlooks flags that are right there. Human oversight mandatory.
+
+### Technical Limitations
+- **Access restrictions**: Some sites block automated tools. Might need proper headers/cookies — respect site policies.
+- **Input handling**: Multi-line pastes = separate commands. Use `:paste` mode for big data blocks.
+
+### Model Performance (Picking Your Fighter)
+- **Current GOAT**: Claude Opus brings strongest reasoning but costs more. Worth it for hard challenges.
+- **Future vibes**: Tool improves as AI models advance. Current models have reasoning gaps.
+- **No magic bullets**: This sidekick handles grunt work, not a carry to first place.
+
+**Bottom line:** Work *with* the AI, verify outputs, keep leveling up. The tool handles tedious stuff so you stay locked in on real problem-solving. 🔥
 ---
 
 <div align="center">
