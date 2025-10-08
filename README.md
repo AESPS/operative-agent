@@ -11,11 +11,8 @@
 [![Anthropic Claude](https://img.shields.io/badge/Anthropic-Claude-orange.svg)](https://www.anthropic.com/)
 [![OpenAI GPT](https://img.shields.io/badge/OpenAI-GPT-purple.svg)](https://openai.com/)
 
-*For those late-night CTF grinds when caffeine hits harder than rate limits.*  
-*Operative is your AI teammate that doesn't sleep, forget, or ghost you mid-debug.*  
-*A helpful tool that makes CTF challenges a bit less painful fr fr.* 🔥
+*Built for late-night CTF grinds when caffeine hits harder than rate limits. Beware of auto-execute, fr fr.* 🔥
 
-** Added more guardrails and instructions, beware of auto-execute flag
 
 [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Tools](#-agent-managed-toolset) • [Examples](#-attack-chain-examples)
 
