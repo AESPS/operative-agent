@@ -5,13 +5,12 @@
 ![Operative](./assets/operative_header.svg)
 
 **Autonomous, chaos-tolerant, AI-powered CTF sidekick that's here to help you aura farm.**
+*Built for late-night CTF grinds when caffeine hits harder than rate limits. Beware of auto-execute, fr fr.* 🔥
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Anthropic Claude](https://img.shields.io/badge/Anthropic-Claude-orange.svg)](https://www.anthropic.com/)
 [![OpenAI GPT](https://img.shields.io/badge/OpenAI-GPT-purple.svg)](https://openai.com/)
-
-*Built for late-night CTF grinds when caffeine hits harder than rate limits. Beware of auto-execute, fr fr.* 🔥
 
 
 [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Tools](#-agent-managed-toolset) • [Examples](#-attack-chain-examples)
