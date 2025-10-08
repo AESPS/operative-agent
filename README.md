@@ -21,7 +21,7 @@
 
 ## 📋 Features
 
-- 🐧 **Kali-ready** — built for chaos labs you actually own (don't break prod, unc 💀)  
+- 🐧 **Kali-ready** — built for chaos labs you actually own (don't let bot touch prod, unc 💀)  
 - 🤖 **Multi-Model Flow** — swap between Claude & GPT mid-run when you need that GOAT clarity  
 - 🧰 **All-in-One Toolkit** — nmap · ffuf · binwalk · exiftool · stegseek · strings · http utils · and more  
 - 💾 **Auto-Save** — no more "where did that dump go," it's chillin' in `/tmp/`  
