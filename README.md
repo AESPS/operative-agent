@@ -161,8 +161,6 @@ python3 operatives.py --max-steps=25
 | 🚀 **ops** | Mission control precision; numbered checklists, contingencies, fallback protocols. |
 | 📚 **teacher** | Patient instructor; breaks it down, shows the math, drops optional homework. |
 
----
-
 > 💡 **Pro tip:** Toggle personas mid-session to keep the flow matching your headspace.
 
 ---
