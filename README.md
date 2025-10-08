@@ -139,28 +139,6 @@ python3 operatives.py --max-steps=25
 | `:help` | Display help | `help`, `-h`, `--help` |
 | `quit` | Exit agent | `exit`, `q` |
 
-## 🎭 Persona Modes
-
-Switch up the agent’s entire vibe mid-session —  
-because sometimes you need a mentor, and sometimes you need a menace 😤  
-
-```bash
-> persona <name>
-> persona list
-> persona reset
-Each persona changes how Operative talks, thinks, and hypes you up:
-
-🧩 Persona	💫 Vibe Check	🧠 Description
-🧠 default	Neutral core	Straight-shooting analyst mode. Zero fluff, all focus.
-😎 genz	Chaos unlocked	Full meme dialect, energy drink in hand, drops “no cap” mid-exploit.
-🧓 mentor	Calm & wise	Senior analyst energy — explains every move, keeps receipts, writes the report.
-⚡ speedrun	Go-fast mode	Minimal words. Max commands. Designed for brain-off speed.
-💾 retro	Hacker nostalgia	90s terminal aesthetic — leet vibes with modern precision.
-🎯 ops	Tactical precision	Mission control voice — numbered steps, contingencies, clean discipline.
-🍎 teacher	Encouraging sensei	Explains reasoning, drops examples, gives homework like “try this next.”
-
----
-```
 
 ---
 
