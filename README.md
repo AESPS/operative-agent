@@ -15,6 +15,8 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Anthropic Claude](https://img.shields.io/badge/Anthropic-Claude-orange.svg)](https://www.anthropic.com/)
 [![OpenAI GPT](https://img.shields.io/badge/OpenAI-GPT-purple.svg)](https://openai.com/)
+[![Persona System](https://img.shields.io/badge/🧠_Persona_System-Rizz_Activated-ff69b4.svg?style=for-the-badge)](#-persona-modes)
+
 
 [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Tools](#-agent-managed-toolset) • [Examples](#-attack-chain-examples)
 
@@ -137,6 +139,7 @@ python3 operatives.py --max-steps=25
 | `:reference` | Show CTF cheatsheet | `:ctf`, `:cheatsheet` |
 | `:help` | Display help | `help`, `-h`, `--help` |
 | `quit` | Exit agent | `exit`, `q` |
+
 
 ---
 
