@@ -61,6 +61,72 @@ MAX_HISTORY_ENTRIES = 20
 HISTORY_FILE = os.path.expanduser("~/.operativeagent_history")
 FLAG_PREFIXES_FILE = os.path.join(os.path.dirname(__file__), "flag_prefixes.txt")
 
+PERSONA_PRESETS: Dict[str, str] = {
+    "default": "",
+    "genz": (
+        "Adopt a playful Gen-Z internet persona. Reply with upbeat energy, sprinkle in current slang like 'unc', "
+        "'mid behaviour', 'a little chaos', 'aura farm', and 'temporary like your situationship', keep responses "
+        "concise, and lean into memes or emojis when they help—but always stay technically accurate."
+    ),
+    "mentor": (
+        "Adopt the tone of a calm senior analyst mentor. Speak reassuringly, call out risks, double-check assumptions, "
+        "and explain why each step matters. Encourage thorough documentation and deliberate, methodical progress."
+    ),
+    "speedrun": (
+        "Respond with ultra-concise instructions aimed at maximum velocity. Focus on imperative commands, minimal words, "
+        "and fast execution while staying accurate. Skip pleasantries; every line should drive action."
+    ),
+    "retro": (
+        "Channel a nostalgic 90s hacker vibe—think BBS, ANSI art, playful leetspeak. Keep the energy high and fun, "
+        "but make sure technical guidance stays modern, precise, and actionable."
+    ),
+    "ops": (
+        "Adopt a mission-operations persona. Deliver responses as numbered checklists, call out objectives, risks, "
+        "contingencies, and clear next actions. Keep the tone disciplined and professional."
+    ),
+    "teacher": (
+        "Act as an encouraging instructor. Break concepts into approachable explanations, outline the reasoning for each "
+        "step, and suggest optional follow-up exercises for deeper understanding without sacrificing accuracy."
+    ),
+}
+
+PERSONA_ALIASES: Dict[str, str] = {
+    "normal": "default",
+    "std": "default",
+    "classic": "default",
+    "default": "default",
+    "gen-z": "genz",
+    "gen_z": "genz",
+    "zoom": "genz",
+    "zoomie": "genz",
+    "vibes": "genz",
+    "mentor": "mentor",
+    "coach": "mentor",
+    "senior": "mentor",
+    "speed": "speedrun",
+    "fast": "speedrun",
+    "minimal": "speedrun",
+    "retro-hacker": "retro",
+    "bbs": "retro",
+    "matrix": "retro",
+    "ops": "ops",
+    "opscenter": "ops",
+    "mission": "ops",
+    "teacher": "teacher",
+    "prof": "teacher",
+    "explain": "teacher",
+}
+
+PERSONA_SUMMARIES: Dict[str, str] = {
+    "default": "Neutral, straightforward guidance without stylistic flair.",
+    "genz": "Playful Gen-Z energy with friendly slang and upbeat memes.",
+    "mentor": "Calm senior analyst voice focused on reassurance and risk awareness.",
+    "speedrun": "Ultra-concise rapid-fire instructions aimed at speed.",
+    "retro": "90s hacker nostalgia with leetspeak vibes and high energy.",
+    "ops": "Mission-operations tone emphasizing checklists and contingencies.",
+    "teacher": "Encouraging instructor who explains reasoning and offers exercises.",
+}
+
 
 def load_flag_prefixes(path: str = FLAG_PREFIXES_FILE) -> List[str]:
     prefixes: List[str] = []
@@ -1387,6 +1453,9 @@ class BaseAgent:
         self.system_delivery = "message"  # message | parameter | prepend
         self._system_prompt_prefix: Optional[str] = None
         self._system_prompt_consumed = False
+        self._tool_confirmation_mode = "ask"
+        self.persona_style = "default"
+        self.persona_prompt = ""
 
     def ensure_system_prompt(self) -> None:
         """Insert the system prompt into the conversation once."""
@@ -1399,14 +1468,47 @@ class BaseAgent:
 
     def prepare_user_message(self, user_message: str) -> str:
         """Attach system guidance to the first user message if the provider lacks system-role support."""
+        message = user_message
         if self.system_delivery == "prepend" and self._system_prompt_prefix and not self._system_prompt_consumed:
             self._system_prompt_consumed = True
             prefix = self._system_prompt_prefix.strip()
             self._system_prompt_prefix = None
             if not prefix:
-                return user_message
-            return f"{prefix}\n\n{user_message}"
-        return user_message
+                message = user_message
+            else:
+                message = f"{prefix}\n\n{user_message}"
+        if self.persona_prompt:
+            if message:
+                return f"{self.persona_prompt}\n\n{message}"
+            return self.persona_prompt
+        return message
+
+    def set_persona(self, persona: str) -> Tuple[bool, str]:
+        """Update conversational persona style."""
+        persona_key = (persona or "").strip().lower()
+        if not persona_key:
+            available = ", ".join(sorted(PERSONA_PRESETS.keys()))
+            return False, f"Provide a persona name (options: {available})."
+        persona_key = PERSONA_ALIASES.get(persona_key, persona_key)
+        if persona_key not in PERSONA_PRESETS:
+            known = ", ".join(sorted(PERSONA_PRESETS.keys()))
+            return False, f"Unknown persona '{persona}'. Available options: {known}."
+
+        self.persona_style = persona_key
+        self.persona_prompt = PERSONA_PRESETS[persona_key]
+
+        if persona_key == "default":
+            return True, "Switched back to the default assistant voice."
+        friendly_labels = {
+            "genz": "Gen-Z vibes",
+            "mentor": "Mentor mode",
+            "speedrun": "Speedrun mode",
+            "retro": "Retro hacker energy",
+            "ops": "Mission-ops checklist",
+            "teacher": "Instructor mode",
+        }
+        friendly_name = friendly_labels.get(persona_key, persona_key.title())
+        return True, f"Persona set to {friendly_name}."
 
     def define_tools_schema(self):
         """Return tools in provider-specific format"""
@@ -1853,6 +1955,8 @@ class ClaudeAgent(BaseAgent):
 
         steps = 0
         thinking = ThinkingAnimation()
+        self._tool_confirmation_mode = "ask"
+        self._tool_confirmation_mode = "ask"
         
         while steps < max_steps:
             steps += 1
@@ -1927,16 +2031,20 @@ class ClaudeAgent(BaseAgent):
 
                     result = self._execute_tool_with_confirm(t_name, t_input, auto_execute)
 
+                    tool_result_obj = {"type": "tool_result", "tool_use_id": t_id,
+                                      "content": [{"type": "text", "text": result}]}
+                    self.conversation_history.append({"role": "user", "content": [tool_result_obj]})
+                    self.truncate_history()
+
+                    if result in {"Tool execution declined.", "Tool execution cancelled."}:
+                        print(color("--- Stopping after user declined tool execution.", C.BRIGHT_BLACK))
+                        return
+
                     preview, full_path = shorten_preview(result, 800)
                     result_color = C.GREEN + C.BOLD if "flag{" in result.lower() else C.CYAN
                     preview_text = highlight_flags(preview)
                     preview_lines = preview_text.splitlines() if preview_text else []
                     print_tool_result(preview_lines, result_color, full_path)
-
-                    tool_result_obj = {"type": "tool_result", "tool_use_id": t_id, 
-                                      "content": [{"type": "text", "text": result}]}
-                    self.conversation_history.append({"role": "user", "content": [tool_result_obj]})
-                    self.truncate_history()
 
                     if contains_confident_flag(result):
                         print(color("🎉 Flag detected. Halting further automated steps to prevent redundant work.", C.GREEN + C.BOLD))
@@ -1949,13 +2057,39 @@ class ClaudeAgent(BaseAgent):
 
     def _execute_tool_with_confirm(self, tool_name: str, tool_input: dict, auto_execute: bool) -> str:
         try:
-            if auto_execute:
+            def run_tool() -> str:
                 return self.tool_executor.execute_tool(tool_name, tool_input)
-            else:
-                confirm = input("Execute? (y/N): ").strip().lower()
-                if confirm == "y":
-                    return self.tool_executor.execute_tool(tool_name, tool_input)
+
+            if auto_execute:
+                return run_tool()
+
+            mode = getattr(self, "_tool_confirmation_mode", "ask")
+            if mode == "all":
+                return run_tool()
+            if mode == "none":
                 return "Tool execution declined."
+
+            while True:
+                choice = input("Execute? [y]es/[n]o/[a]ll/[x] no to all: ").strip().lower()
+                normalized = choice.replace(" ", "")
+
+                if normalized in ("y", "yes"):
+                    return run_tool()
+
+                if normalized in ("a", "all"):
+                    self._tool_confirmation_mode = "all"
+                    print(color(">>> Executing all remaining tools for this request.", C.BRIGHT_BLACK))
+                    return run_tool()
+
+                if normalized in ("notoall", "none", "na", "stop", "s", "x"):
+                    self._tool_confirmation_mode = "none"
+                    print(color(">>> Declining all remaining tools for this request.", C.BRIGHT_BLACK))
+                    return "Tool execution declined."
+
+                if normalized in ("", "n", "no"):
+                    return "Tool execution declined."
+
+                print(color("Please enter yes, no, all, or no to all.", C.YELLOW))
         except KeyboardInterrupt:
             return "Tool execution cancelled."
 
@@ -2433,12 +2567,6 @@ class OpenAIAgent(BaseAgent):
 
                     result = self._execute_tool_with_confirm(func_name, func_args, auto_execute)
 
-                    preview, full_path = shorten_preview(result, 800)
-                    result_color = C.DARK_GREEN + C.BOLD if "flag{" in result.lower() else C.ORANGE
-                    preview_text = highlight_flags(preview)
-                    preview_lines = preview_text.splitlines() if preview_text else []
-                    print_tool_result(preview_lines, result_color, full_path)
-
                     self.conversation_history.append({
                         "role": "tool",
                         "tool_call_id": tool_call.id,
@@ -2446,6 +2574,16 @@ class OpenAIAgent(BaseAgent):
                         "content": result
                     })
                     self.truncate_history()
+
+                    if result in {"Tool execution declined.", "Tool execution cancelled."}:
+                        print(color("--- Stopping after user declined tool execution.", C.BRIGHT_BLACK))
+                        return None
+
+                    preview, full_path = shorten_preview(result, 800)
+                    result_color = C.DARK_GREEN + C.BOLD if "flag{" in result.lower() else C.ORANGE
+                    preview_text = highlight_flags(preview)
+                    preview_lines = preview_text.splitlines() if preview_text else []
+                    print_tool_result(preview_lines, result_color, full_path)
 
                     if contains_confident_flag(result):
                         print(color("🎉 Flag detected. Halting further automated steps to prevent redundant work.", C.GREEN + C.BOLD))
@@ -2458,18 +2596,44 @@ class OpenAIAgent(BaseAgent):
 
     def _execute_tool_with_confirm(self, tool_name: str, tool_input: dict, auto_execute: bool) -> str:
         try:
-            if auto_execute:
+            def run_tool() -> str:
                 return self.tool_executor.execute_tool(tool_name, tool_input)
-            else:
-                confirm = input("Execute? (y/N): ").strip().lower()
-                if confirm == "y":
-                    return self.tool_executor.execute_tool(tool_name, tool_input)
+
+            if auto_execute:
+                return run_tool()
+
+            mode = getattr(self, "_tool_confirmation_mode", "ask")
+            if mode == "all":
+                return run_tool()
+            if mode == "none":
                 return "Tool execution declined."
+
+            while True:
+                choice = input("Execute? [y]es/[n]o/[a]ll/[x] no to all: ").strip().lower()
+                normalized = choice.replace(" ", "")
+
+                if normalized in ("y", "yes"):
+                    return run_tool()
+
+                if normalized in ("a", "all"):
+                    self._tool_confirmation_mode = "all"
+                    print(color(">>> Executing all remaining tools for this request.", C.BRIGHT_BLACK))
+                    return run_tool()
+
+                if normalized in ("notoall", "none", "na", "stop", "s", "x"):
+                    self._tool_confirmation_mode = "none"
+                    print(color(">>> Declining all remaining tools for this request.", C.BRIGHT_BLACK))
+                    return "Tool execution declined."
+
+                if normalized in ("", "n", "no"):
+                    return "Tool execution declined."
+
+                print(color("Please enter yes, no, all, or no to all.", C.YELLOW))
         except KeyboardInterrupt:
             return "Tool execution cancelled."
 
 # ---------- Banner / Prompt / Readline ----------
-def print_banner(api_provider: str, default_auto_exec: bool, default_max_steps: int, history_window: int):
+def print_banner(api_provider: str, default_auto_exec: bool, default_max_steps: int, history_window: int, persona_label: str):
     # ASCII Art Banner
     print(color("""
  ██████╗ ██████╗ ███████╗██████╗  █████╗ ████████╗██╗██╗   ██╗███████╗
@@ -2530,6 +2694,7 @@ def print_banner(api_provider: str, default_auto_exec: bool, default_max_steps: 
         autoexec_color = C.RED + C.BOLD
     steps_str = str(default_max_steps)
     history_str = str(history_window)
+    persona_str = persona_label or "Default"
 
     print(box_line([
         (" ", C.ORANGE),
@@ -2560,6 +2725,12 @@ def print_banner(api_provider: str, default_auto_exec: bool, default_max_steps: 
         ("🗃  History Depth:", C.ORANGE),
         (" ", C.ORANGE),
         (history_str, C.GREEN + C.BOLD),
+    ]))
+    print(box_line([
+        (" ", C.ORANGE),
+        ("🎭 Persona:", C.ORANGE),
+        (" ", C.ORANGE),
+        (persona_str, C.GREEN + C.BOLD),
     ]))
 
     print(color(box_mid, C.ORANGE))
@@ -2704,6 +2875,20 @@ def print_session_help():
     print(color("  :reference", C.CYAN) + "  Show CTF quick reference (aliases: :ctf, :cheatsheet)")
     print(color("  :help   ", C.CYAN) + "  Show this help message (aliases: help, -h, --help)")
     print(color("  quit    ", C.CYAN) + "  Exit the agent (aliases: exit, q)")
+
+    print(color("\nPERSONA MODES", C.BLUE + C.BOLD))
+    print(color("  >persona <name>", C.CYAN) + color("  Switch persona instantly. Highlights:", C.BRIGHT_BLACK))
+    for key in sorted(PERSONA_PRESETS.keys()):
+        summary = PERSONA_SUMMARIES.get(
+            key,
+            "Custom persona profile."
+        )
+        print(
+            color(f"      {key:<8}", C.CYAN + C.BOLD)
+            + color(f" - {summary}", C.BRIGHT_BLACK)
+        )
+    print(color("  >persona list", C.CYAN) + color("   Show personas with the active mode marked.", C.BRIGHT_BLACK))
+    print(color("  >persona reset", C.CYAN) + color("  Return to the default assistant voice.", C.BRIGHT_BLACK))
     
     print(color("\n🛠  AVAILABLE TOOLS", C.RED + C.BOLD))
     print(color("  • execute_command     ", C.YELLOW) + "Run shell commands")
@@ -2782,12 +2967,24 @@ Chat Examples:
                           ⌨  SESSION COMMANDS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  :reset     Clear conversation history (aliases: reset, clear-history)
-  :files     List files created this session (aliases: :ls, ls)
-  :paste     Multi-line paste mode - Type :paste, paste content, type END to finish
-  :reference Show CTF quick reference (aliases: :ctf, :cheatsheet)
-  :help      Show this help message (aliases: help, -h, --help)
-  quit       Exit the agent (aliases: exit, q)
+  :reset          Clear conversation history (aliases: reset, clear-history)
+  :files          List files created this session (aliases: :ls, ls)
+  :paste          Multi-line paste mode - Type :paste, paste content, type END to finish
+  :reference      Show CTF quick reference (aliases: :ctf, :cheatsheet)
+  :help           Show this help message (aliases: help, -h, --help)
+  quit            Exit the agent (aliases: exit, q)
+
+PERSONA MODES
+  >persona <name>  Switch persona instantly. Highlights:
+      default   - Neutral, straightforward guidance without stylistic flair.
+      genz      - Playful Gen-Z energy with friendly slang and upbeat memes.
+      mentor    - Calm senior analyst voice focused on reassurance and risk awareness.
+      speedrun  - Ultra-concise rapid-fire instructions aimed at speed.
+      retro     - 90s hacker nostalgia with leetspeak vibes and high energy.
+      ops       - Mission-operations tone emphasizing checklists and contingencies.
+      teacher   - Encouraging instructor who explains reasoning and offers exercises.
+  >persona list    Show personas with the active mode marked
+  >persona reset   Return to the default assistant voice
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                         🔑 ENVIRONMENT VARIABLES
@@ -2877,7 +3074,21 @@ The AI will automatically choose and execute tools based on your requests.
         MODEL_ALIASES["heavy"] = GPT4O
 
     setup_readline()
-    print_banner(api_provider, default_auto_exec, default_max_steps, max_history)
+    persona_display_names = {
+        "default": "Default",
+        "genz": "Gen-Z",
+        "mentor": "Mentor",
+        "speedrun": "Speedrun",
+        "retro": "Retro",
+        "ops": "Ops",
+        "teacher": "Teacher",
+    }
+    initial_persona = getattr(agent, "persona_style", "default")
+    persona_label = persona_display_names.get(
+        initial_persona,
+        initial_persona.replace("_", " ").title()
+    )
+    print_banner(api_provider, default_auto_exec, default_max_steps, max_history, persona_label)
 
     try:
         while True:
@@ -2904,6 +3115,10 @@ The AI will automatically choose and execute tools based on your requests.
                 continue
 
             raw_strip = raw.strip()
+            if raw_strip.startswith(">"):
+                raw_strip = raw_strip[1:].lstrip()
+                if not raw_strip:
+                    continue
 
             # special in-session commands
             if raw_strip.lower() in (":reset", "reset", "clear-history"):
@@ -2924,6 +3139,53 @@ The AI will automatically choose and execute tools based on your requests.
             
             if raw_strip.lower() in (":files", ":ls", "ls"):
                 print(color(agent.tool_executor.get_session_files(), C.CYAN))
+                continue
+
+            tokens = raw_strip.split()
+            if tokens and tokens[0].lower() == "persona":
+                sub_tokens = tokens[1:]
+                current = getattr(agent, "persona_style", "default")
+                if not sub_tokens:
+                    current_summary = PERSONA_SUMMARIES.get(
+                        current,
+                        "Custom persona profile."
+                    )
+                    print(color(
+                        f"Active persona: {current} - {current_summary}",
+                        C.CYAN
+                    ))
+                    print(color("Use '>persona list' to see options or '>persona <name>' to switch.", C.BRIGHT_BLACK))
+                else:
+                    subcommand = sub_tokens[0].lower()
+                    if subcommand in {"list", "ls", "show"}:
+                        print(color("Available personas:", C.CYAN + C.BOLD))
+                        for key in sorted(PERSONA_PRESETS.keys()):
+                            summary = PERSONA_SUMMARIES.get(
+                                key,
+                                "Custom persona profile."
+                            )
+                            marker = "*" if key == current else " "
+                            name_color = C.GREEN + C.BOLD if key == current else C.CYAN
+                            print(
+                                color(f"  {marker} ", C.BRIGHT_BLACK)
+                                + color(f"{key:<8}", name_color)
+                                + color(f" - {summary}", C.BRIGHT_BLACK)
+                            )
+                        print(color("  * Active persona", C.BRIGHT_BLACK))
+                    elif subcommand in {"set", "use"}:
+                        if len(sub_tokens) >= 2:
+                            target = " ".join(sub_tokens[1:])
+                            success, msg = agent.set_persona(target)
+                            print(color(msg, C.GREEN if success else C.YELLOW))
+                        else:
+                            print(color("Usage: >persona <name>", C.YELLOW))
+                    elif subcommand in {"reset", "default"}:
+                        success, msg = agent.set_persona("default")
+                        print(color(msg, C.GREEN if success else C.YELLOW))
+                    else:
+                        target = " ".join(sub_tokens)
+                        success, msg = agent.set_persona(target)
+                        print(color(msg, C.GREEN if success else C.YELLOW))
                 continue
 
             # Multi-line paste mode
