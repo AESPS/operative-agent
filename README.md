@@ -84,8 +84,8 @@ python3 operatives.py
 
 ```bash
 # For ~/.zshrc or ~/.bashrc — run this OUTSIDE the virtualenv
-echo 'export ANTHROPIC_API_KEY="sk-ant-0a1b2c3d4e5f6a7b8c9d0e1f-2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d-sike-you-thought-💀"' >> ~/.zshrc
-echo 'export OPENAI_API_KEY="sk-opn-abcdef1234567890abcdef1234567890-fedcba0987654321fedcba0987654321-sike-you-thought-💀"' >> ~/.zshrc
+echo 'export ANTHROPIC_API_KEY="sk-ant-0a1b2c3d4e5f6a7b8c9d0e1f-2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d-sike-you-thought-💀💀💀"' >> ~/.zshrc
+echo 'export OPENAI_API_KEY="sk-opn-abcdef1234567890abcdef1234567890-fedcba0987654321fedcba0987654321-sike-you-thought-💀💀💀"' >> ~/.zshrc
 source ~/.zshrc
 
 ```
