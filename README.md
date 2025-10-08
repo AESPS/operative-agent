@@ -363,7 +363,7 @@ END
 
 ---
 
-## 💰 Cost Optimization (Because APIs Are Expensive Fr Fr 😭)
+## 💰 Cost Optimization (Because APIs Are Expensive 🥀)
 
 | Strategy | Savings | When to Use |
 |----------|---------|-------------|
