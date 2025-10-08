@@ -149,9 +149,6 @@ python3 operatives.py --max-steps=25
 >persona list        # see who's available (shows active persona)
 >persona reset       # return to neutral mode
 ```
-
----
-
 ## Available Personas
 
 | Persona | Description |
