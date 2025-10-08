@@ -334,16 +334,13 @@ This project is for **authorized labs and CTF** — we're not villains, no cap.
 - Claude Opus = reasoning GOAT; GPT-4o Mini = quick sidekick.
 - Real talk: it won't carry you, but it'll save you time.
 
-**If it saved you some brain cells, drop a ⭐.**  
-Main-character commits only. Stay based, stay GOAT. 💅
-
 ---
 
 <div align="center">
 
 **Built with 🔥 by Ong Gedek Gedek**
 
-If this repo hits, drop a ⭐ — keep the main-character energy alive and stop unc from crashing out.  
+**If it saved you some brain cells, drop a ⭐.**  
 API's still expensive, no cap 😭
 
 [⬆ Back to Top](#-operative-agentic-ai)
