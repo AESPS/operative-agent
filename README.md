@@ -95,7 +95,8 @@ source ~/.zshrc
 
 ## 💻 Usage
 
-# NOTE: By Default AUTO-EXECUTE IS ON! If something bad happend 😂 cancel any running process with control + C or CMD + C
+# NOTE: By Default AUTO-EXECUTE IS ON! 
+If something bad happend 😂 cancel any running process with control + C or Command + C
 
 ### Basic Commands
 
