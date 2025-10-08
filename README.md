@@ -82,7 +82,7 @@ python3 operatives.py
 ```
 
 <details>
-<summary><b>🔐 Persistent API Setup (so you don't keep typing them like a bot)</b></summary>
+<summary><b>🔐 Persistent API Setup (so you don't keep typing them like a NPC)</b></summary>
 
 ```bash
 # For ~/.zshrc or ~/.bashrc
