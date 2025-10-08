@@ -142,7 +142,7 @@ python3 operatives.py --max-steps=25
 
 **Switch up the vibe on the fly to match your workflow.**
 ```bash
->persona <name>      # switch energy instantly
+>persona <name>      # switch energy instantly e.g >persona genz
 >persona list        # see who's available (shows active persona)
 >persona reset       # return to neutral mode
 ```
