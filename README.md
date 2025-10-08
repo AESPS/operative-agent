@@ -27,7 +27,7 @@
 - 💾 **Auto-Save** — no more "where did that dump go," it's chillin' in `/tmp/`  
 - ⚙️ **Execution Control** — full-auto when you're in flow, manual when you're crashing out  
 - 📦 **Session Recall** — keeps track of your messy grind like a loyal homie  
-- 💸 **API pain** — $5 gone faster than your focus during finals 😭  
+- 💸 **Reality Check** — APIs cost slaps 💀 RIP $5 credits — that's five nasi katok meals gone 😭
 - 🚧 **Beta energy** — expect some bugs — that's just ✨ a feature ✨  
 
 ---
