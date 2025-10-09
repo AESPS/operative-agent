@@ -8,8 +8,6 @@
 
 Operative’s got fresh guardrails, clearer flows, and yes... extra rizz. → [See Persona List](#-persona-modes)
 
----
-
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Anthropic Claude](https://img.shields.io/badge/Anthropic-Claude-orange.svg)](https://www.anthropic.com/)
@@ -20,7 +18,6 @@ Operative’s got fresh guardrails, clearer flows, and yes... extra rizz. → [S
 
 </div>
 
----
 
 ## 📋 Features
 
