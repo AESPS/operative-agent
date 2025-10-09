@@ -7,7 +7,7 @@
 **Built for those late-night CTF arcs when caffeine hits harder than rate limits — stay locked in keep mewing** 🔥
 
 
-### ⚡ Now Powered by GPT-5
+### ⚡ Now support GPT-5 Api
 
 Operative’s got fresh guardrails, clearer flows, and yes... extra rizz. → [See Persona List](#-persona-modes)
 
