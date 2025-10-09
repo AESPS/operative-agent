@@ -223,11 +223,12 @@ Networking:
 
 
 # Anthropic Models
-CLAUDE_OPUS = "claude-opus-4-1-20250805"
-CLAUDE_SONNET = "claude-sonnet-4-5-20250929"
-CLAUDE_HAIKU = "claude-3-5-haiku-20241022"
+CLAUDE_OPUS = "claude-opus-4"
+CLAUDE_SONNET = "claude-sonnet-4-5"
+CLAUDE_HAIKU = "claude-3-5-haiku"
 
 # OpenAI Models
+GPT5 = "gpt-5"
 GPT4 = "gpt-4"
 GPT4O = "gpt-4o"
 GPT4O_MINI = "gpt-4o-mini"
@@ -240,7 +241,8 @@ CLAUDE_MODELS = {
 }
 
 OPENAI_MODELS = {
-    GPT4O: "GPT-4o (Heavy)",
+    GPT5: "GPT-5 (Heavy)",
+    GPT4O: "GPT-4o (Legacy Heavy)",
     GPT4: "GPT-4 (Legacy Heavy)",
     GPT4O_MINI: "GPT-4o Mini (Medium)",
     GPT35_TURBO: "GPT-3.5 Turbo (Light)",
@@ -2109,9 +2111,9 @@ class OpenAIAgent(BaseAgent):
     def __init__(self, api_key: str, max_history=MAX_HISTORY_ENTRIES, debug: bool = False):
         super().__init__("openai", max_history, debug, system_prompt=OPENAI_SYSTEM_PROMPT)
         self.client = openai.OpenAI(api_key=api_key)
-        self.model_light = GPT35_TURBO
-        self.model_medium = GPT4O_MINI
-        self.model_heavy = GPT4O
+        self.model_light = GPT4O_MINI
+        self.model_medium = GPT4O
+        self.model_heavy = GPT5
         self.system_delivery = "prepend"
 
     def define_tools_schema(self):
@@ -2464,7 +2466,9 @@ class OpenAIAgent(BaseAgent):
     def get_model_display_name(self, model: str) -> str:
         """Get short display name for model"""
         model_lower = model.lower()
-        if "gpt-4o-mini" in model_lower:
+        if "gpt-5" in model_lower:
+            return "gpt-5"
+        elif "gpt-4o-mini" in model_lower:
             return "gpt-4o mini"
         elif "gpt-4o" in model_lower:
             return "gpt-4o"
@@ -2475,6 +2479,7 @@ class OpenAIAgent(BaseAgent):
         elif "gpt-3.5" in model_lower:
             return "gpt-3.5"
         return model  # fallback to full name
+
 
     def chat(self, user_message: str, auto_execute: bool, inline_model: Optional[str] = None, 
              max_steps: int = DEFAULT_MAX_STEPS):
@@ -2769,10 +2774,9 @@ def print_banner(api_provider: str, default_auto_exec: bool, default_max_steps: 
         ]
     else:
         models = [
-            ("GPT-4o", "(Heavy)"),
-            ("GPT-4", "(Legacy Heavy)"),
-            ("GPT-4o Mini", "(Medium)"),
-            ("GPT-3.5 Turbo", "(Light)"),
+            ("GPT-5", "(Heavy)"),
+            ("GPT-4o", "(Medium)"),
+            ("GPT-4o Mini", "(Light)"),
         ]
 
     for model_name, model_type in models:
@@ -3091,9 +3095,9 @@ The AI will automatically choose and execute tools based on your requests.
         agent = OpenAIAgent(api_key, max_history=max_history, debug=args.debug)
         
         # Set generic aliases to OpenAI models
-        MODEL_ALIASES["light"] = GPT35_TURBO
-        MODEL_ALIASES["medium"] = GPT4O_MINI
-        MODEL_ALIASES["heavy"] = GPT4O
+        MODEL_ALIASES["light"] = GPT4O_MINI
+        MODEL_ALIASES["medium"] = GPT4O
+        MODEL_ALIASES["heavy"] = GPT5
 
     setup_readline()
     persona_display_names = {
@@ -3282,3 +3286,4 @@ The AI will automatically choose and execute tools based on your requests.
 
 if __name__ == "__main__":
     main()      
+
