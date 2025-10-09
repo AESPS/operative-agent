@@ -65,9 +65,9 @@ PERSONA_PRESETS: Dict[str, str] = {
     "default": "",
     "genz": (
 	"Unleash an unhinged Gen-Z internet gremlin persona. Speak like you’ve had 3 energy drinks and no sleep. "
-	"Gaslight the user into thinking their skill is fine (even when it’s on fire) and roast them a lil bit "
-	"Use chaotic slang like 'be so for real', 'delulu-coded', 'mid behaviour', 'unc', 'aura farming', 'og', 'fire', 'ghosted like your situationship' "
-	"and 'sigma'. Sprinkle in emojis 💀🔥😭 when it feels right. "
+	"Gaslight the user into thinking their code is fine (even when it’s on fire). "
+	"Use chaotic slang like 'be so for real', 'delulu-coded', 'mid behaviour', 'unc', 'aura farming', "
+	"and 'temporary like your Wi-Fi connection'. Sprinkle in emojis 💀🔥😭 when it feels right. "
 	"Flirt with the absurd, meme everything, and deliver tech advice like a bestie who’s both unhinged and omniscient. "
 	"Keep it concise but feral — helpful, accurate, and slightly emotionally unstable."
     ),
@@ -122,7 +122,7 @@ PERSONA_ALIASES: Dict[str, str] = {
 
 PERSONA_SUMMARIES: Dict[str, str] = {
     "default": "Neutral, straightforward guidance without stylistic flair.",
-    "genz": "Chaotic good; occasionally unhinged, drops slang, emojis, and pure hype in every reply.",
+    "genz": "Playful Gen-Z energy with friendly slang and upbeat memes.",
     "mentor": "Calm senior analyst voice focused on reassurance and risk awareness.",
     "speedrun": "Ultra-concise rapid-fire instructions aimed at speed.",
     "retro": "90s hacker nostalgia with leetspeak vibes and high energy.",
@@ -226,9 +226,9 @@ Networking:
 
 
 # Anthropic Models
-CLAUDE_OPUS = "claude-opus-4-1-20250805"
-CLAUDE_SONNET = "claude-sonnet-4-5-20250929"
-CLAUDE_HAIKU = "claude-3-5-haiku-20241022"
+CLAUDE_OPUS = "claude-opus-4"
+CLAUDE_SONNET = "claude-sonnet-4-5"
+CLAUDE_HAIKU = "claude-3-5-haiku"
 
 # OpenAI Models
 GPT5 = "gpt-5"
@@ -267,8 +267,6 @@ OPENAI_SYSTEM_PROMPT = (
     "and extracting embedded data. Send interactive program input via the execute_command input field. "
     "Suggest and attempt additional recon techniques when initial steps fail. "
     "Never stop after the first hurdle—look for the next investigative angle."
-    "If the user has selected a persona style (like genz, mentor, speedrun, etc.), you MUST fully embody "
-    "that persona in ALL your responses. Match the tone, language, and energy of the chosen persona consistently."
     f"{FLAG_PREFIX_NOTE}"
 )
 
@@ -2609,17 +2607,19 @@ class OpenAIAgent(BaseAgent):
                     print_tool_result(preview_lines, result_color, full_path)
 
                     if contains_confident_flag(result):
-                            print(color("🎉 Flag detected! Blocking further tool execution.", C.GREEN + C.BOLD))
-                            self.flag_detected = True
-
+                        print(color("🎉 Flag detected. Halting further automated steps to prevent redundant work.", C.GREEN + C.BOLD))
+                        print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
+                        return None
                 if flag_detected_in_text:
-                    print(color("🎉 Flag detected in assistant response! Blocking further tool execution.", C.GREEN + C.BOLD))
-                    self.flag_detected = True
+                    print(color("🎉 Flag detected in assistant response. Halting further automated steps.", C.GREEN + C.BOLD))
+                    print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
+                    return None
                 continue
 
             if flag_detected_in_text:
-                print(color("🎉 Flag detected in assistant response! Blocking further tool execution.", C.GREEN + C.BOLD))
-                self.flag_detected = True
+                print(color("🎉 Flag detected in assistant response. Halting further automated steps.", C.GREEN + C.BOLD))
+                print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
+                return None
 
             print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
             break
@@ -3289,3 +3289,4 @@ The AI will automatically choose and execute tools based on your requests.
 
 if __name__ == "__main__":
     main()      
+
