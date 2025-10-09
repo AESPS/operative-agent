@@ -22,4 +22,4 @@ sunshinectf
 midnightsun
 angstromctf
 cbctf
-
+flag
