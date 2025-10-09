@@ -1,6 +1,7 @@
 # 🎯 Operative Agentic AI 
 
 <div align="center">
+    
 ### ⚡ Now support GPT-5 API
     
 ![Operative](./assets/operative_header.svg)
