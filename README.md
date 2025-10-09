@@ -378,7 +378,7 @@ This AI-powered CTF agent slaps, but let's keep it 💯 about limitations:
 
 <div align="center">
 
-**Built with 🔥 by Ong Gedek Gedek**
+**Built by Ong Gedek Gedek**🔥
 
 **If it saved you some brain cells, drop a ⭐.**  
 API's still expensive, no cap 😭
