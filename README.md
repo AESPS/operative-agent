@@ -6,7 +6,7 @@
 
 **Built for those late-night CTF arcs when caffeine hits harder than rate limits — stay locked in keep mewing** 🔥
 
-*(Update: Added new guardrails, instructions, and gave the agent some rizz — [See Persona List →](#-persona-modes))*
+*(Update: Added new guardrails, with gpt 5 (heavy), and gave the agent some rizz — [See Persona List →](#-persona-modes))*
 
 
 
@@ -166,9 +166,9 @@ python3 operatives.py --max-steps=25
 
 | Tier | Claude | OpenAI | Performance | Cost |
 |------|--------|--------|-------------|------|
-| **Heavy** | Opus 4.1 | GPT-4o | 🔥 Big brain energy | $$ |
-| **Medium** | Sonnet 4.5 | GPT-4o Mini | 💪 Balanced GOAT tier | $ |
-| **Light** | Haiku 3.5 | GPT-3.5 Turbo | ⚡ Zoomies mode | $ |
+| **Heavy** | Opus 4.1 | GPT-5 | 🔥 Big brain energy | $$ |
+| **Medium** | Sonnet 4.5 | GPT-4o | 💪 Balanced GOAT tier | $ |
+| **Light** | Haiku 3.5 | GPT-4o Mini | ⚡ Zoomies mode | $ |
 
 <details>
 <summary><b>📊 When to Use Each Tier</b></summary>
