@@ -6,11 +6,15 @@
 
 **Built for those late-night CTF arcs when caffeine hits harder than rate limits — stay locked in keep mewing** 🔥
 
-**Now support GPT-5 ⚡**
+---
 
-*(Update: Added new guardrails, instructions, and gave the agent some rizz — [See Persona List →](#-persona-modes))*
+### ⚡ Now Powered by GPT-5
 
+Operative’s still the same chaos-tolerant sidekick — just running on a stronger brain.  
+Fresh guardrails, clearer flows, and yes... extra rizz.  
+→ [See Persona List](#-persona-list)
 
+---
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
