@@ -101,7 +101,7 @@ source ~/.zshrc
 ## 💻 Usage
 
 ### ⚠️ **Heads up — Auto-Execute is ON by default!**  
-> If things start acting sus 😂, hit the brakes anytime:
+> If things start acting sus 😂 hit the brakes anytime:
 >
 > - **Ctrl + C** → cancel current command (Windows/Linux)  
 > - **Cmd + C** → cancel on macOS  
