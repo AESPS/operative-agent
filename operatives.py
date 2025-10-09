@@ -122,7 +122,7 @@ PERSONA_ALIASES: Dict[str, str] = {
 
 PERSONA_SUMMARIES: Dict[str, str] = {
     "default": "Neutral, straightforward guidance without stylistic flair.",
-    "genz": "Playful Gen-Z energy with friendly slang and upbeat memes.",
+    "genz": "Chaotic good; occasionally unhinged, drops slang, emojis, and pure hype in every reply.",
     "mentor": "Calm senior analyst voice focused on reassurance and risk awareness.",
     "speedrun": "Ultra-concise rapid-fire instructions aimed at speed.",
     "retro": "90s hacker nostalgia with leetspeak vibes and high energy.",
