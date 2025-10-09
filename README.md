@@ -4,7 +4,7 @@
 
 ![Operative](./assets/operative_header.svg)
 
-**Built for those late-night CTF arcs when caffeine hits harder than rate limits — stay locked in, no cap.** 🔥
+**Built for those late-night CTF arcs when caffeine hits harder than rate limits — stay locked in keep mewing** 🔥
 
 *(Update: Added new guardrails, instructions, and gave the agent some rizz — [See Persona List →](#-persona-modes))*
 
