@@ -2,8 +2,6 @@
 
 <div align="center">
     
-### ⚡ Now support GPT-5 API
-    
 ![Operative](./assets/operative_header.svg)
 
 **Built for those late-night CTF arcs when caffeine hits harder than rate limits — stay locked in keep mewing** 🔥
@@ -25,6 +23,8 @@ Operative’s got fresh guardrails, clearer flows, and yes... extra rizz. → [S
 ---
 
 ## 📋 Features
+
+### ⚡ Now support GPT-5 API
 
 - 🐧 **Kali-ready** — built for chaos labs you actually own (don't let bot touch prod, unc 💀)  
 - 🤖 **Multi-Model Flow** — swap between Claude & GPT mid-run when you need that GOAT clarity  
