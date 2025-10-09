@@ -1,13 +1,11 @@
-# 🎯 Operative Agentic AI
+# 🎯 Operative Agentic AI 
+### ⚡ Now support GPT-5 API
 
 <div align="center">
 
 ![Operative](./assets/operative_header.svg)
 
 **Built for those late-night CTF arcs when caffeine hits harder than rate limits — stay locked in keep mewing** 🔥
-
-
-### ⚡ Now support GPT-5 API
 
 Operative’s got fresh guardrails, clearer flows, and yes... extra rizz. → [See Persona List](#-persona-modes)
 
