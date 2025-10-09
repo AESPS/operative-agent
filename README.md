@@ -151,7 +151,7 @@ python3 operatives.py --max-steps=25
 | Persona | Description |
 |---------|-------------|
 | 🎯 **default** | Straight-faced analyst energy; zero fluff, just execution. |
-| 🔥 **genz** | Chaotic good; occasionally unhinged, drops slang, emojis, and pure hype in every reply. |
+| 🔥 **genz** | Chaotic neutral; occasionally unhinged and might roast you, drops slang, emojis, and pure hype in every reply. |
 | 🧙 **mentor** | Calm senior dev; reassures you, double-checks risks, logs the mission. |
 | ⚡ **speedrun** | Straight to the point; optimized for terminal goblins on a timer. |
 | 👾 **retro** | Old-school hacker aesthetic; leetspeak, ANSI vibes, CRT glow in text form. |
