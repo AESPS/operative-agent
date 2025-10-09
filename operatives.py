@@ -226,9 +226,9 @@ Networking:
 
 
 # Anthropic Models
-CLAUDE_OPUS = "claude-opus-4"
-CLAUDE_SONNET = "claude-sonnet-4-5"
-CLAUDE_HAIKU = "claude-3-5-haiku"
+CLAUDE_OPUS = "claude-opus-4-1-20250805"
+CLAUDE_SONNET = "claude-sonnet-4-5-20250929"
+CLAUDE_HAIKU = "claude-3-5-haiku-20241022"
 
 # OpenAI Models
 GPT5 = "gpt-5"
