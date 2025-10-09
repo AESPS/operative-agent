@@ -9,9 +9,7 @@
 
 ### ⚡ Now Powered by GPT-5
 
-Operative’s still the same chaos-tolerant sidekick — just running on a stronger brain.  
-Fresh guardrails, clearer flows, and yes... extra rizz.  
-→ [See Persona List](#-persona-list)
+Operative’s still the same chaos-tolerant sidekick — just running on a stronger brain. Fresh guardrails, clearer flows, and yes... extra rizz. → [See Persona List](#-persona-list)
 
 ---
 
