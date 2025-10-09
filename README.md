@@ -58,7 +58,7 @@ https://github.com/user-attachments/assets/f3b18c96-5f24-4a58-a6ef-a39aba65f633
 
 ### 🧩 Prerequisites
 ```bash
-# Kali/ParrotOS/Ubuntu setup (stay based, unc)
+# Kali/ParrotOS/Ubuntu setup (kali reccomended alot of preinstalled tools)
 sudo apt update && sudo apt install -y \
     python3 python3-pip nmap binutils \
     exiftool binwalk stegseek ffuf whatweb
@@ -173,7 +173,7 @@ python3 operatives.py --max-steps=25
 <details>
 <summary><b>📊 When to Use Each Tier</b></summary>
 
-**Heavy** — when you're deep in reversing hell, locked in like unc with coffee.  
+**Heavy** — when you're deep in reversing hell, clocked with coffee.  
 **Medium** — the daily driver for general recon and web hunts.  
 **Light** — broke mode, but fast. Based if you're speedrunning flags.
 </details>
@@ -183,7 +183,7 @@ python3 operatives.py --max-steps=25
 ## 🛠️ Agent-Managed Toolset
 
 > Just describe what you need — Operative decides which tool to deploy.  
-> It's like having an unc who actually helps instead of judging your commands. 💀
+> It's like having an partner who actually helps instead of judging your commands. 💀
 
 ### 🔍 Recon (Main-Character Flow)
 | Tool | Description | Key Features |
@@ -245,7 +245,7 @@ python3 operatives.py --max-steps=25
 ```bash
 👾 Operator [root]: Analyze /tmp/suspicious.bin
 
-🤖 Claude [sonnet 4.5]: Let's see what unc left in here.
+🤖 Claude [sonnet 4.5]: Let's see whats in here.
 
 🔧 Tool: [checksec_analyze]
 ✅ RELRO:    Partial RELRO
@@ -294,7 +294,7 @@ No more crashing out from newline pain. 🧠
 - Review commands before letting them cook
 
 ❌ **DON'T:**
-- Touch prod (please unc 🙏)
+- Touch prod (please unc we're begging 🙏)
 - Expose keys or session files
 - Run wild — stay based
 
