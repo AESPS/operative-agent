@@ -278,7 +278,9 @@ CLAUDE_SYSTEM_PROMPT = (
     "when appropriate. Favor write_file + python3 scripts over brittle python -c commands. "
     "For shellcode or binaries, attempt decoding, disassembly, and other reversing techniques (capstone, radare2, etc.) "
     "Provide stdin to interactive binaries using the execute_command input parameter. "
-    "before concluding. Keep pushing the investigation forward."
+    "before concluding. Keep pushing the investigation forward. "
+    "If the user has selected a persona style (like genz, mentor, speedrun, etc.), you MUST fully embody "
+    "that persona in ALL your responses. Match the tone, language, and energy of the chosen persona consistently."
     f"{FLAG_PREFIX_NOTE}"
 )
 
@@ -1469,10 +1471,15 @@ class BaseAgent:
     def ensure_system_prompt(self) -> None:
         """Insert the system prompt into the conversation once."""
         if self.system_prompt and not self._system_message_inserted:
+            # Combine base system prompt with persona if set
+            full_system_prompt = self.system_prompt
+            if self.persona_prompt:
+                full_system_prompt = f"{self.system_prompt}\n\nPERSONA INSTRUCTIONS:\n{self.persona_prompt}"
+
             if self.system_delivery == "message":
-                self.conversation_history.insert(0, {"role": "system", "content": self.system_prompt})
+                self.conversation_history.insert(0, {"role": "system", "content": full_system_prompt})
             elif self.system_delivery == "prepend":
-                self._system_prompt_prefix = self.system_prompt
+                self._system_prompt_prefix = full_system_prompt
             self._system_message_inserted = True
 
     def prepare_user_message(self, user_message: str) -> str:
@@ -1505,6 +1512,14 @@ class BaseAgent:
 
         self.persona_style = persona_key
         self.persona_prompt = PERSONA_PRESETS[persona_key]
+
+        # Update system message if it exists
+        if self._system_message_inserted and self.conversation_history:
+            if self.conversation_history[0].get("role") == "system":
+                full_system_prompt = self.system_prompt
+                if self.persona_prompt:
+                    full_system_prompt = f"{self.system_prompt}\n\nPERSONA INSTRUCTIONS:\n{self.persona_prompt}"
+                self.conversation_history[0]["content"] = full_system_prompt
 
         if persona_key == "default":
             return True, "Switched back to the default assistant voice."
