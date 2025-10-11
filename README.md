@@ -31,7 +31,12 @@ Operative’s got fresh guardrails, clearer flows, and yes... extra rizz. → [S
 - ⚙️ **Execution Control** — full-auto when you're in flow, manual when you're crashing out  
 - 📦 **Session Recall** — Keeps track of your messy lab so you don't lose your loot no cap og.  
 - 💸 **Reality Check** — APIs cost slaps 💀 RIP $5 credits — that's five nasi katok meals gone 😭
-- 🚧 **Beta energy** — expect some bugs — that's just ✨ a feature ✨  
+- 🚧 **Beta energy** — expect some bugs — that's just ✨ a feature ✨
+- 💰 Added estimate token consumption:
+
+        e.g 🎉 Flag detected in assistant response. Halting further automated steps.
+        --- Done (requests: 10, tools: 9, tokens: 68,948 ($0.26)) ---
+
 
 ---
 
