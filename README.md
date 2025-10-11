@@ -32,8 +32,8 @@ Operative’s got fresh guardrails, clearer flows, and yes... extra rizz. → [S
 - 📦 **Session Recall** — Keeps track of your messy lab so you don't lose your loot no cap og.  
 - 💸 **Reality Check** — APIs cost slaps 💀 RIP $5 credits — that's five nasi katok meals gone 😭
 - 🚧 **Beta energy** — expect some bugs — that's just ✨ a feature ✨
-- 💰 Added estimate token consumption:
-
+- ++ (New feature 11/10/2025) 💰 Added estimate token consumption: E.g Claude with heavy model (opus)
+  
         e.g 🎉 Flag detected in assistant response. Halting further automated steps.
         --- Done (requests: 10, tools: 9, tokens: 68,948 ($0.26)) ---
 
