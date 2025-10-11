@@ -313,13 +313,13 @@ if SUPPORTS_UNICODE:
         '👾'.encode(sys.stdout.encoding)
     except UnicodeEncodeError:
         SUPPORTS_UNICODE = False
-PROMPT_STYLE = os.environ.get('OPERATIVE_PROMPT_STYLE', 'auto').lower()
+PROMPT_STYLE = os.environ.get('OPERATIVE_PROMPT_STYLE', 'fancy').lower()  # Changed default to 'fancy'
 if PROMPT_STYLE in {'emoji', 'fancy'}:
     USE_FANCY_PROMPT = SUPPORTS_UNICODE
 elif PROMPT_STYLE in {'plain', 'ascii'}:
     USE_FANCY_PROMPT = False
-else:  # auto fallback prefers reliable ASCII prompt
-    USE_FANCY_PROMPT = False
+else:  # auto fallback
+    USE_FANCY_PROMPT = SUPPORTS_UNICODE
 
 
 def color(s: str, col: str) -> str:
@@ -2882,7 +2882,7 @@ def save_history():
 def prompt_string() -> str:
     whoami = getpass.getuser()
     use_color_prompt = ENABLE_COLOR and readline is not None
-    glyph = "?? " if USE_FANCY_PROMPT and use_color_prompt else ""
+    glyph = "👾 " if USE_FANCY_PROMPT and use_color_prompt else ""
     label = f"{glyph}Operator"
     if use_color_prompt:
         prompt = color(label, C.CYAN + C.BOLD) + color(f" [{whoami}]", C.MUTED_BLUE) + color(": ", C.RESET)
