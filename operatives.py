@@ -1452,6 +1452,8 @@ class BaseAgent:
         self.conversation_history = []
         self.total_api_requests = 0
         self.total_tool_calls = 0
+        self.total_input_tokens = 0
+        self.total_output_tokens = 0
         self.max_history = max_history
         self.debug = debug
         self.tool_executor = ToolExecutor()
@@ -1643,6 +1645,54 @@ class BaseAgent:
                 continue
             filtered_history.append(entry)
         self.conversation_history = filtered_history
+
+    def format_token_summary(self) -> str:
+        """Format token usage with cost calculation"""
+        total_tokens = self.total_input_tokens + self.total_output_tokens
+
+        # Cost calculation (USD per million tokens)
+        if self.api_provider == "claude":
+            # Claude pricing (as of Jan 2025)
+            costs = {
+                CLAUDE_OPUS: (15.00, 75.00),      # input, output per 1M tokens
+                CLAUDE_SONNET: (3.00, 15.00),
+                CLAUDE_HAIKU: (0.80, 4.00),
+            }
+            model = getattr(self, 'current_model', CLAUDE_SONNET)
+            input_cost_per_m, output_cost_per_m = costs.get(model, (3.00, 15.00))
+        else:
+            # OpenAI pricing (as of Aug 2025 - GPT-5 release)
+            costs = {
+                GPT5: (1.25, 10.00),        # Updated Aug 2025
+                GPT4O: (2.50, 10.00),
+                GPT4: (30.00, 60.00),
+                GPT4O_MINI: (0.150, 0.600),
+                GPT35_TURBO: (0.50, 1.50),
+            }
+            model = getattr(self, 'current_model', GPT4O)
+            input_cost_per_m, output_cost_per_m = costs.get(model, (2.50, 10.00))
+
+        input_cost = (self.total_input_tokens / 1_000_000) * input_cost_per_m
+        output_cost = (self.total_output_tokens / 1_000_000) * output_cost_per_m
+        total_cost = input_cost + output_cost
+
+        # Format with colors
+        if total_cost < 0.01:
+            cost_str = f"${total_cost:.4f}"
+            cost_color = C.GREEN
+        elif total_cost < 0.10:
+            cost_str = f"${total_cost:.3f}"
+            cost_color = C.YELLOW
+        else:
+            cost_str = f"${total_cost:.2f}"
+            cost_color = C.RED
+
+        return (
+            f"requests: {self.total_api_requests}, "
+            f"tools: {self.total_tool_calls}, "
+            f"tokens: {total_tokens:,} "
+            f"({color(cost_str, cost_color)})"
+        )
 
 # ---------- Claude Agent ----------
 class ClaudeAgent(BaseAgent):
@@ -1964,10 +2014,11 @@ class ClaudeAgent(BaseAgent):
         thinking = ThinkingAnimation()
         self._tool_confirmation_mode = "ask"
         self._tool_confirmation_mode = "ask"
-        
+
         while steps < max_steps:
             steps += 1
             model = self.pick_model(inline_model)
+            self.current_model = model  # Track for cost calculation
 
             context_error = False
             cancelled = False
@@ -1990,6 +2041,12 @@ class ClaudeAgent(BaseAgent):
                         **request_kwargs
                     )
                     thinking.stop()
+
+                    # Track token usage from response
+                    if hasattr(response, 'usage'):
+                        self.total_input_tokens += getattr(response.usage, 'input_tokens', 0)
+                        self.total_output_tokens += getattr(response.usage, 'output_tokens', 0)
+
                     break
                 except KeyboardInterrupt:
                     thinking.stop()
@@ -2057,20 +2114,20 @@ class ClaudeAgent(BaseAgent):
 
                     if contains_confident_flag(result):
                         print(color("🎉 Flag detected. Halting further automated steps to prevent redundant work.", C.GREEN + C.BOLD))
-                        print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
+                        print(color(f"--- Done ({self.format_token_summary()}) ---\n", C.BRIGHT_BLACK))
                         return
                 if flag_detected_in_text:
                     print(color("🎉 Flag detected in assistant response. Halting further automated steps.", C.GREEN + C.BOLD))
-                    print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
+                    print(color(f"--- Done ({self.format_token_summary()}) ---\n", C.BRIGHT_BLACK))
                     return
                 continue
 
             if flag_detected_in_text:
                 print(color("🎉 Flag detected in assistant response. Halting further automated steps.", C.GREEN + C.BOLD))
-                print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
+                print(color(f"--- Done ({self.format_token_summary()}) ---\n", C.BRIGHT_BLACK))
                 return
 
-            print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
+            print(color(f"--- Done ({self.format_token_summary()}) ---\n", C.BRIGHT_BLACK))
             break
 
     def _execute_tool_with_confirm(self, tool_name: str, tool_input: dict, auto_execute: bool) -> str:
@@ -2500,10 +2557,11 @@ class OpenAIAgent(BaseAgent):
 
         steps = 0
         thinking = ThinkingAnimation()
-        
+
         while steps < max_steps:
             steps += 1
             model = self.pick_model(inline_model)
+            self.current_model = model  # Track for cost calculation
 
             context_error = False
             cancelled = False
@@ -2521,6 +2579,12 @@ class OpenAIAgent(BaseAgent):
                         tool_choice="auto"
                     )
                     thinking.stop()
+
+                    # Track token usage from response
+                    if hasattr(response, 'usage'):
+                        self.total_input_tokens += getattr(response.usage, 'prompt_tokens', 0)
+                        self.total_output_tokens += getattr(response.usage, 'completion_tokens', 0)
+
                     break
                 except KeyboardInterrupt:
                     thinking.stop()
@@ -2621,7 +2685,7 @@ class OpenAIAgent(BaseAgent):
                 print(color("🎉 Flag detected in assistant response! Blocking further tool execution.", C.GREEN + C.BOLD))
                 self.flag_detected = True
 
-            print(color(f"--- Done (requests: {self.total_api_requests}, tools: {self.total_tool_calls}) ---\n", C.BRIGHT_BLACK))
+            print(color(f"--- Done ({self.format_token_summary()}) ---\n", C.BRIGHT_BLACK))
             break
 
     def _execute_tool_with_confirm(self, tool_name: str, tool_input: dict, auto_execute: bool) -> str:
@@ -3248,9 +3312,14 @@ The AI will automatically choose and execute tools based on your requests.
                 save_history()
                 continue  # Skip the normal message processing pipeline
             if raw_strip.lower() in ("quit", "exit", "q"):
-                print(f"\nSession summary:")
-                print(f"  API requests: {agent.total_api_requests}")
-                print(f"  Tool calls:   {agent.total_tool_calls}")
+                total_tokens = agent.total_input_tokens + agent.total_output_tokens
+                print(f"\n📊 Session Summary:")
+                print(f"  API requests:   {agent.total_api_requests}")
+                print(f"  Tool calls:     {agent.total_tool_calls}")
+                print(f"  Input tokens:   {agent.total_input_tokens:,}")
+                print(f"  Output tokens:  {agent.total_output_tokens:,}")
+                print(f"  Total tokens:   {total_tokens:,}")
+                print(f"  {agent.format_token_summary().split('tokens: ')[1]}")  # Just show the cost
                 break
 
             message, auto_exec, inline_model_raw, max_steps = parse_inline_flags(
