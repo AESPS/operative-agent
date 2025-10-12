@@ -99,6 +99,24 @@ source ~/.zshrc
 ```
 </details>
 
+## 🐳 Docker Compose 
+
+```bash
+# Clone repo
+git clone https://github.com/AESPS/operative-agent.git
+cd operative-agent
+
+# Edit .env file with your api key
+
+
+# Make sure you have docker and docker compose installed
+docker compose up --build -d
+docker exec -it operatives bash
+
+# Inside the docker container terminal
+$ python3 operatives.py
+
+```
 ---
 
 ## 💻 Usage
