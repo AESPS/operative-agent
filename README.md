@@ -106,7 +106,7 @@ source ~/.zshrc
 git clone https://github.com/AESPS/operative-agent.git
 cd operative-agent
 
-# Edit .env.example --> .env file with your api key or set api key manually
+# Rename .env.example --> .env and fill it in with your api key
 mv .env.example .env
 
 # Make sure you have docker and docker compose installed
