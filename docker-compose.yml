@@ -1,0 +1,19 @@
+# docker-compose.yml - mounts repo at /workspace (operatives.py and workspace/ are at same level)
+services:
+  operative:
+    build: .
+    image: operative:latest
+    container_name: operative
+    tty: true
+    stdin_open: true
+    environment:
+      - TZ=Etc/UTC
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - ./:/workspace            # mount your repo; operatives.py and workspace/ live here
+    cap_add:
+      - NET_RAW                  # optional: allow raw sockets (nmap SYN requires it)
+    security_opt:
+      - no-new-privileges:true   # safer while still running as root
+    restart: unless-stopped
