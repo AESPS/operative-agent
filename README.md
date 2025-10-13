@@ -36,8 +36,6 @@ Operative’s got fresh guardrails, clearer flows, and yes... extra rizz. → [S
   
         e.g 🎉 Flag detected in assistant response. Halting further automated steps.
         --- Done (requests: 10, tools: 9, tokens: 68,948 ($0.26)) ---
-
-
 ---
 
 ## 🤘 Quick Vibes: Why You'll Love It
