@@ -2150,12 +2150,20 @@ class ClaudeAgent(BaseAgent):
             def run_tool() -> str:
                 return self.tool_executor.execute_tool(tool_name, tool_input)
 
+            def run_with_animation() -> str:
+                thinking = ThinkingAnimation()
+                thinking.start()
+                try:
+                    return run_tool()
+                finally:
+                    thinking.stop()
+
             if auto_execute:
-                return run_tool()
+                return run_with_animation()
 
             mode = getattr(self, "_tool_confirmation_mode", "ask")
             if mode == "all":
-                return run_tool()
+                return run_with_animation()
             if mode == "none":
                 return "Tool execution declined."
 
@@ -2164,12 +2172,12 @@ class ClaudeAgent(BaseAgent):
                 normalized = choice.replace(" ", "")
 
                 if normalized in ("y", "yes"):
-                    return run_tool()
+                    return run_with_animation()
 
                 if normalized in ("a", "all"):
                     self._tool_confirmation_mode = "all"
                     print(color(">>> Executing all remaining tools for this request.", C.BRIGHT_BLACK))
-                    return run_tool()
+                    return run_with_animation()
 
                 if normalized in ("notoall", "none", "na", "stop", "s", "x"):
                     self._tool_confirmation_mode = "none"
@@ -2708,12 +2716,20 @@ class OpenAIAgent(BaseAgent):
             def run_tool() -> str:
                 return self.tool_executor.execute_tool(tool_name, tool_input)
 
+            def run_with_animation() -> str:
+                thinking = ThinkingAnimation()
+                thinking.start()
+                try:
+                    return run_tool()
+                finally:
+                    thinking.stop()
+
             if auto_execute:
-                return run_tool()
+                return run_with_animation()
 
             mode = getattr(self, "_tool_confirmation_mode", "ask")
             if mode == "all":
-                return run_tool()
+                return run_with_animation()
             if mode == "none":
                 return "Tool execution declined."
 
@@ -2722,12 +2738,12 @@ class OpenAIAgent(BaseAgent):
                 normalized = choice.replace(" ", "")
 
                 if normalized in ("y", "yes"):
-                    return run_tool()
+                    return run_with_animation()
 
                 if normalized in ("a", "all"):
                     self._tool_confirmation_mode = "all"
                     print(color(">>> Executing all remaining tools for this request.", C.BRIGHT_BLACK))
-                    return run_tool()
+                    return run_with_animation()
 
                 if normalized in ("notoall", "none", "na", "stop", "s", "x"):
                     self._tool_confirmation_mode = "none"
